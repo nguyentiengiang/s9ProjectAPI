@@ -1,0 +1,6 @@
+# Do not remove this line, otherwise mod_rewrite rules will stop working
+Options +FollowSymLinks
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ %{ENV:BASE}index.php [QSA,L]
