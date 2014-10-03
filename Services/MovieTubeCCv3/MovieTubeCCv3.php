@@ -1,16 +1,9 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 \Slim\Slim::registerAutoloader();
 
 /*
- * id, app, packageName, packageNameMarketing, developer, admod_large, admod_small, 
- * adspaceid, publisherid, `status`, is_download, strSeparatorYT, strSeparatorGD, 
- * versionApp, isParserOnline, youtube_api_key, isHd
+ * MovieTubeCCv3
  */
 
 class MovieTubeCCv3 {
