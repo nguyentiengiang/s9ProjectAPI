@@ -29,7 +29,7 @@ $bench->start();
 $dbUser = "s2admin";
 $dbPass = "mdata!6789";
 $dbHost = "localhost";
-$dbName = "AppConfig";
+$dbName = "MovieTubeCCv3";
 
 $movie = new MovieTubeCCv3($dbHost, $dbName, $dbUser, $dbPass);
 $movie->enable();

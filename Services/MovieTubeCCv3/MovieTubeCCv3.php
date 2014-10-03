@@ -29,10 +29,10 @@ class MovieTubeCCv3 {
 
     public function enable() {
         $this->app->get('/', array($this, 'index'));
-        $this->app->get('/json/admod', array($this, 'getConfigByPackage'));
-        $this->app->get('/getAll', array($this, 'getAll'));
-        $this->app->get('/getConfigById/:id', array($this, 'getConfigByID'));
-        $this->app->post('/postAdd', array($this, 'postAddNew'));
+//        $this->app->get('/GetCountry', array($this, 'getCountries'));
+        $this->app->get('/GetCategory', array($this, 'getCategories'));
+        $this->app->get('/AllFilms', array($this, 'getAllFilms'));
+//        $this->app->post('/postAdd', array($this, 'postAddNew'));
         $this->app->run();
     }
 
@@ -46,25 +46,21 @@ class MovieTubeCCv3 {
         
     }
 
-    public function getConfigByPackage() {
+    public function getCountries() {
         $result = null;
         try {
-            $packageName = $this->app->request()->get('package');
-            if (!empty($packageName)) {
-                $this->db = $this->dbConnect();
-                $cf = $this->db->admod_config("packageName = ?", $packageName)->select("admod_large as large, " .
-                        "admod_small as small, adspaceid, publisherid, packageName, packageNameMarketing, developer, " .
-                        "status as admobEnable, strSeparatorYT, strSeparatorGD, versionApp, isParserOnline, youtube_api_key, " .
-                        "isHd, is_download");
-                if (!empty($cf[0])) {
-                    $result = $cf[0];
-                } else {
-                    $this->app->response()->status(404);
-                    $result = array('message' => 'Get Package Setting Fail!');
+//            $cache = new NotORM_Cache_File("notorm.cache");
+            $db = $this->dbConnect();
+            $countries = $db->country()->select("id, name")->where("isHide = ?", 0);
+            if (count($countries)) {
+                $result = array();
+                foreach ($countries as $country) {
+                    $data = iterator_to_array($country);
+                    array_push($result, $data);
                 }
             } else {
                 $this->app->response()->status(404);
-                $result = array('message' => 'Invalid Parameters!');
+                $result = array('message' => 'Get Country List Fail!');
             }
         } catch (ResourceNotFoundException $e) {
             $this->app->response()->status(404);
@@ -84,7 +80,41 @@ class MovieTubeCCv3 {
         }
     }
 
-    public function getAll() {
+    public function getCategories() {
+        $result = null;
+        try {
+//            $cache = new NotORM_Cache_File("notorm.cache");
+            $db = $this->dbConnect();
+            $categories = $db->genre()->select("id, name")->where("isHide = ?", 0);
+            if (count($categories)) {
+                $result = array();
+                foreach ($categories as $category) {
+                    $data = iterator_to_array($category);
+                    array_push($result, $data);
+                }
+            } else {
+                $this->app->response()->status(404);
+                $result = array('message' => 'Get genre list Fail!');
+            }
+        } catch (ResourceNotFoundException $e) {
+            $this->app->response()->status(404);
+            $result = array('message' => 'Resource Not Found!');
+        } catch (Exception $e) {
+            $this->app->response()->status(400);
+            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+        }
+        $this->app->response()->header('X-Powered-By', 'ongteu');
+        $mediaType = $this->app->request()->getMediaType();
+        if ($mediaType == 'application/xml') {
+            $this->app->response()->header('Content-Type', 'application/xml');
+            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
+        } else {
+            $this->app->response->headers->set('Content-Type', 'application/json');
+            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+        }
+    }
+    
+    public function getAllFilms() {
         $result = null;
         try {
 //            $cache = new NotORM_Cache_File("notorm.cache");
