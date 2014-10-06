@@ -14,7 +14,7 @@ class GoogleDrive {
 
         $url = "https://docs.google.com/get_video_info?docid=" . $id . "&authuser=";
         $html = file_get_html($url);
-        
+
 //        d($html);
 
         $dom = new DOMDocument();
@@ -43,12 +43,13 @@ class GoogleDrive {
         unset($content);
         return $arrLink;
     }
-    
+
     /*
      * @Return $arrLink streming from google video.
      *
      * @param $html string String source code html from google drive of client send to server
      */
+
     static function proccessContentFromClient($html) {
         $arrLink = null;
         /*
@@ -181,7 +182,7 @@ class GoogleDrive {
     }
 
     static function cleanLinkV31($strSrc) {
-        File\Log::write($strSrc);
+        \MyFile\Log::write($strSrc, "proxy", "proxyGD");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
 
@@ -322,7 +323,7 @@ class YouTube {
     }
 
     public static function cleanLinkTypeClientv2($strSrc) {
-        File\Log::write($strSrc);
+        \MyFile\Log::write($strSrc, "proxy", "proxyYT");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
             $arrTemp = array();
@@ -399,7 +400,7 @@ class YouTube {
 class YouTube2 {
 
     static function cleanLinkV3($strSrc) {
-        File\Log::write($strSrc);
+        \MyFile\Log::write($strSrc, "proxy", "proxyYT2");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
 
@@ -432,10 +433,14 @@ class YouTube2 {
             }
             if (empty($hd)) {
                 $hd = $sd;
+            } else if (empty($sd)) {
+                $sd = $hd;
             }
-            $arrHQ = array("hd" => $hd);
-            $arrSQ = array("sd" => $sd);
-            $link = $arrHQ + $arrSQ;
+            if (empty($hd) && empty($sd)) {
+                $link = null;
+            } else {
+                $link = array("hd" => $hd) + array("sd" => $sd);
+            }
         }
         return $link;
     }

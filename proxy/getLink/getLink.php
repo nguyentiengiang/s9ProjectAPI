@@ -21,10 +21,8 @@ class getLinkMp4 {
         $this->app->get('/', array($this, 'index'));
         $this->app->get('/MovieTube', array($this, 'GetLinkMovieTube'));
         $this->app->get('/Watch33TV', array($this, 'GetLinkWatch33TV'));
-        $this->app->get('/YouTube', array($this, 'GetLinkYouTube'));
-        $this->app->post('/YouTube', array($this, 'GetLinkYouTube'));
-        $this->app->get('/GoogleDrive', array($this, 'GetLinkGoogleDrive'));
-        $this->app->post('/GoogleDrive', array($this, 'GetLinkGoogleDrive'));
+        $this->app->map('/YouTube', array($this, 'GetLinkYouTube'))->via('GET', 'POST');
+        $this->app->map('/GoogleDrive', array($this, 'GetLinkGoogleDrive'))->via('GET', 'POST');
         $this->app->run();
     }
 
@@ -99,13 +97,24 @@ class getLinkMp4 {
     public function GetLinkYouTube() {
         $result = null;
         try {
-            $id = $this->app->request()->get('id');
-            $content = $this->app->request()->post('content');
-            if (!empty($id)) {
-                $contents = YouTube::requestContent(trim($id));
-                $result = YouTube::processContent($contents);
-            } else if (!empty($content)) {
-                $result = YouTube2::cleanLinkV3($content);
+            $method = strtoupper($this->app->request->getMethod());
+            switch ($method) {
+                case "GET":
+                    $id = $this->app->request()->get('id');
+                    if (!empty($id)) {
+                        $contents = YouTube::requestContent(trim($id));
+                        $result = YouTube::processContent($contents);
+                    }
+                    break;
+                case "POST":
+                    $content = $this->app->request()->post('content');
+                    if (!empty($content)) {
+                        $result = YouTube2::cleanLinkV3($content);
+                    }
+                    break;
+                default:
+                    $result = null;
+                    break;
             }
             if (is_null($result)) {
                 $this->app->response()->status(404);
@@ -132,12 +141,22 @@ class getLinkMp4 {
     public function GetLinkGoogleDrive() {
         $result = null;
         try {
-            $id = $this->app->request()->get('id');
-            $content = $this->app->request()->post('content');
-            if (!empty($id)) {
-                $result = GoogleDrive::requestFromServer($id);
-            } else if (!empty($content)) {
-                $result = GoogleDrive::cleanLinkV31($content);
+            $method = strtoupper($this->app->request->getMethod());
+            switch ($method) {
+                case "GET":
+                    $id = $this->app->request()->get('id');
+                    if (!empty($id)) {
+                        $result = GoogleDrive::requestFromServer($id);
+                    }
+                    break;
+                case "POST":
+                    $content = $this->app->request()->params('content');
+                    if (!empty($content)) {
+                        $result = GoogleDrive::cleanLinkV31($content);
+                    }
+                default:
+                    $result = null;
+                    break;
             }
             if (is_null($result)) {
                 $this->app->response()->status(404);

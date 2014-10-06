@@ -37,7 +37,7 @@ class AppList {
     }
 
     function dbConnect($cache = null) {
-        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass);
+        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
         $db = new \NotORM($pdo, null, $cache);
         return $db;
     }

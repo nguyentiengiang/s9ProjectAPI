@@ -34,7 +34,7 @@ class MovieTubeCCv3 {
     }
 
     function dbConnect($cache = null) {
-        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass);
+        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
         $db = new \NotORM($pdo, null, $cache);
         return $db;
     }
@@ -126,10 +126,10 @@ class MovieTubeCCv3 {
         $this->app->response()->header('X-Powered-By', 'ongteu');
         $mediaType = $this->app->request()->getMediaType();
         if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
+            $this->app->response()->header('Content-Type', 'application/xml;charset=utf-8');
             echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
         } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
+            $this->app->response->headers->set('Content-Type', 'application/json;charset=utf-8');
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
         }
     }
@@ -144,12 +144,11 @@ class MovieTubeCCv3 {
 //            $cache = new NotORM_Cache_File("notorm.cache");
             $db = $this->dbConnect();
             $genres = $db->genre()->select("id as cateId, name as cateName")->where("isHide = ?", 0);
-            $arrGenres = array();
+            $result = array();
             foreach ($genres as $genre) {
                 $data = iterator_to_array($genre);
-                array_push($arrGenres, $data);
+                array_push($result, $data);
             }
-            $result = array("listCategory" => $arrGenres);
         } catch (ResourceNotFoundException $e) {
             $this->app->response()->status(404);
             $result = array('message' => 'Resource Not Found!');
@@ -160,10 +159,10 @@ class MovieTubeCCv3 {
         $this->app->response()->header('X-Powered-By', 'ongteu');
         $mediaType = $this->app->request()->getMediaType();
         if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
+            $this->app->response()->header('Content-Type', 'application/xml;charset=utf-8');
             echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
         } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
+            $this->app->response->headers->set('Content-Type', 'application/json;charset=utf-8');
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE);
         }
     }
@@ -189,8 +188,8 @@ class MovieTubeCCv3 {
                             "filmId" => $film['id'],
                             "name" => $film['name'],
                             "year" => $film['year'],
-                            "youtubeId" => $film['movieLink'],
-                            "thumb" => $film['poster'],
+                            "youtubeId" => base64_encode($film['movieLink']),
+                            "thumb" => base64_encode($film['poster']),
                             "imdb" => $film['imdbRate']
                         )) + array("category" => $arrFG);
                     array_push($arrFilms, $filmDetails);
@@ -221,10 +220,10 @@ class MovieTubeCCv3 {
         $this->app->response()->header('X-Powered-By', 'ongteu');
         $mediaType = $this->app->request()->getMediaType();
         if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
+            $this->app->response()->header('Content-Type', 'application/xml;charset=utf-8');
             echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
         } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
+            $this->app->response->headers->set('Content-Type', 'application/json;charset=utf-8');
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
         }
     }
