@@ -6,14 +6,14 @@
  * Chia-anime
  */
 
-class getLinkMp4 {
+class getStreamLinkMP4 {
 
     public function __construct() {
         $this->app = new \Slim\Slim(array(
-            'debug' => true,
-            'mode' => 'development',
-//            'debug' => false,
-//            'mode' => 'production',
+//            'debug' => true,
+//            'mode' => 'development',
+            'debug' => false,
+            'mode' => 'production',
         ));
     }
 
@@ -22,6 +22,7 @@ class getLinkMp4 {
         $this->app->get('/MovieTube', array($this, 'GetLinkMovieTube'));
         $this->app->get('/Watch33TV', array($this, 'GetLinkWatch33TV'));
         $this->app->map('/YouTube', array($this, 'GetLinkYouTube'))->via('GET', 'POST');
+        $this->app->map('/ios/YouTube', array($this, 'GetLinkYouTube'))->via('GET', 'POST');
         $this->app->map('/GoogleDrive', array($this, 'GetLinkGoogleDrive'))->via('GET', 'POST');
         $this->app->run();
     }
