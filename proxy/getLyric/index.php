@@ -15,8 +15,8 @@ if (!defined('LIB_ROOT')) {
     require(LIB_ROOT . 'class.File.php');
 //    require(LIB_ROOT . 'Valitron/Validator.php');
     //Libraries for debug and benckmark
-    require(LIB_ROOT . 'Kint/Kint.class.php');
-//    require(LIB_ROOT . 'Ubench.php');
+//    require(LIB_ROOT . 'Kint/Kint.class.php');
+    require(LIB_ROOT . 'Ubench.php');
     //Libraries for debug and benckmark
     require(HELP_ROOT . 'XMLHelper.php');
 }
@@ -24,7 +24,6 @@ require 'class.Lyrics.php';
 require 'getLyric.php';
 
 //$bench = new Ubench;
-//START BenchMark
 //$bench->start();
 
 $lyric = new Lyric();
@@ -35,6 +34,6 @@ $lyric->enable();
 //$str .= PHP_EOL . 'Time: ' . $bench->getTime(true) . ' microsecond -> ' . $bench->getTime(false, '%d%s');
 //$str .= PHP_EOL . 'MemoryPeak: ' . $bench->getMemoryPeak(true) . ' bytes -> ' . $bench->getMemoryPeak(false, '%.3f%s');
 //$str .= PHP_EOL . 'MemoryUsage: ' . $bench->getMemoryUsage(true);
-//MyFile\Log::write($str);
+//MyFile\Log::write($str, "Lyrics", "lyrics");
 //unset($str);
 ?>
