@@ -1,16 +1,9 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 \Slim\Slim::registerAutoloader();
 
 /*
- * id, app, packageName, packageNameMarketing, developer, admod_large, admod_small, 
- * adspaceid, publisherid, `status`, is_download, strSeparatorYT, strSeparatorGD, 
- * versionApp, isParserOnline, youtube_api_key, isHd
+ * MVTubeCO 
  */
 
 class MVTubeCO {
@@ -30,6 +23,9 @@ class MVTubeCO {
     public function enable() {
         $this->app->get('/', array($this, 'index'));
         $this->app->get('/json/GetPlaylist', array($this, 'GetPlaylists'));
+        $this->app->get('/json/GetYTPlaylist', array($this, 'GetYTPlaylists'));
+        $this->app->get('/json/GetSong', array($this, 'GetSongByPlaylist500'));
+        $this->app->get('/json/GetSongWP', array($this, 'GetSongByPlaylist500'));
         $this->app->run();
     }
 
@@ -47,17 +43,39 @@ class MVTubeCO {
         $result = null;
         try {
             $db = $this->dbConnect();
-            $videos = $db->videos()->select("name, img as thumb, youtube_id as youtubeId");
-            if (count($videos)) {
-                $result = array();
-                foreach ($videos as $video) {
-                    $data = iterator_to_array($video);
-                    array_push($result, $data);
-                }
-            } else {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Get Package Setting Fail!');
+            $charts = $db->Playlist(array("isHide = ?" => 0, "typePlaylist = ?" => 1))->select("id, name, image, imageFlat");
+            $languages = $db->Playlist(array("isHide = ?" => 0, "typePlaylist = ?" => 2))->select("id, name, image, imageFlat");
+            $artists = $db->Playlist(array("isHide = ?" => 0, "typePlaylist = ?" => 3))->select("id, name, image, imageFlat");
+            $albums = $db->Playlist(array("isHide = ?" => 0, "typePlaylist = ?" => 4))->select("id, name, image, imageFlat");
+            $genres = $db->Playlist(array("isHide = ?" => 0, "typePlaylist = ?" => 5))->select("id, name, image, imageFlat");
+            $arrCharts = array();
+            $arrLanguages = array();
+            $arrArtists = array();
+            $arrAlbums = array();
+            $arrGenres = array();
+            foreach ($charts as $chart) {
+                $data = iterator_to_array($chart);
+                array_push($arrCharts, $data);
+            }            
+            foreach ($languages as $language) {
+                $data = iterator_to_array($language);
+                array_push($arrLanguages, $data);
             }
+            foreach ($artists as $artist) {
+                $data = iterator_to_array($artist);
+                array_push($arrArtists, $data);
+            }
+            foreach ($albums as $album) {
+                $data = iterator_to_array($album);
+                array_push($arrAlbums, $data);
+            }
+            foreach ($genres as $genre) {
+                $data = iterator_to_array($genre);
+                array_push($arrGenres, $data);
+            }
+            $result = array("chart" => $arrCharts) + array("language" => $arrLanguages) + 
+                    array("artist" => $arrArtists) + array("album" => $arrAlbums) + 
+                    array("genre" => $arrGenres);
         } catch (ResourceNotFoundException $e) {
             $this->app->response()->status(404);
             $result = array('message' => 'Resource Not Found!');
@@ -75,22 +93,65 @@ class MVTubeCO {
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
         }
     }
-    
-    public function getVideos() {
+
+    public function GetYTPlaylists() {
         $result = null;
         try {
-//            $cache = new NotORM_Cache_File("notorm.cache");
             $db = $this->dbConnect();
-            $videos = $db->videos()->select("name, img as thumb, youtube_id as youtubeId");
-            if (count($videos)) {
-                $result = array();
-                foreach ($videos as $video) {
-                    $data = iterator_to_array($video);
-                    array_push($result, $data);
+            $popularPlaylists = $db->PlaylistYT("typePlaylist = ?", 1)->select("name, imgFlat as imageFlat");
+            $artists = $db->PlaylistYT("typePlaylist = ?", 2)->select("name, imgFlat as imageFlat");
+            $playlists = $db->PlaylistYT("typePlaylist = ?", 3)->select("name, imgFlat as imageFlat");
+            $arrPopularPlaylists = array();
+            $arrArtists = array();
+            $arrPlaylists = array();
+            foreach ($popularPlaylists as $popularPlaylist) {
+                $data = iterator_to_array($popularPlaylist);
+                array_push($arrPopularPlaylists, $data);
+            }
+            foreach ($artists as $artist) {
+                $data = iterator_to_array($artist);
+                array_push($arrArtists, $data);
+            }
+            foreach ($playlists as $playlist) {
+                $data = iterator_to_array($playlist);
+                array_push($arrPlaylists, $data);
+            }
+            $result = array("popularPlaylist" => $arrPopularPlaylists) + array("artist" => $arrArtists) + 
+                    array("playlist" => $arrPlaylists);
+        } catch (ResourceNotFoundException $e) {
+            $this->app->response()->status(404);
+            $result = array('message' => 'Resource Not Found!');
+        } catch (Exception $e) {
+            $this->app->response()->status(400);
+            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+        }
+        $this->app->response()->header('X-Powered-By', 'ongteu');
+        $mediaType = $this->app->request()->getMediaType();
+        if ($mediaType == 'application/xml') {
+            $this->app->response()->header('Content-Type', 'application/xml');
+            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
+        } else {
+            $this->app->response->headers->set('Content-Type', 'application/json');
+            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function GetSongByPlaylist() {
+        $result = null;
+        try {
+            $pId = $this->app->request()->get('id');
+            $db = $this->dbConnect();
+            $songs = $db->Song(array("isHide = ?" => 0, "playlistId = ?" => $pId))->select("name, singer, image, youtubeId, uploader as author, duration, viewCount, rating");
+            $arrSongs = array();
+            if (count($songs)) {
+                foreach ($songs as $song) {
+                    $data = iterator_to_array($song);
+                    array_push($arrSongs, $data);
                 }
+                $result = array("song" => $arrSongs);
             } else {
                 $this->app->response()->status(404);
-                $result = array('message' => 'Get Package Setting Fail!');
+                $result = array('message' => 'Get Songs Fail!');
             }
         } catch (ResourceNotFoundException $e) {
             $this->app->response()->status(404);
@@ -110,6 +171,41 @@ class MVTubeCO {
         }
     }
 
-}
+    public function GetSongByPlaylist500() {
+        $result = null;
+        try {
+            $pId = $this->app->request()->get('id');
+            $db = $this->dbConnect();
+            $songs = $db->Song(array("isHide = ?" => 0, "playlistId = ?" => $pId))->select("name, singer, image, youtubeId, uploader as author, duration, viewCount, rating")->limit(500, 0);
+            $arrSongs = array();
+            if (count($songs)) {
+                foreach ($songs as $song) {
+                    $data = iterator_to_array($song);
+                    array_push($arrSongs, $data);
+                }
+                $result = array("song" => $arrSongs);
+            } else {
+                $this->app->response()->status(404);
+                $result = array('message' => 'Get Songs Fail!');
+            }
+        } catch (ResourceNotFoundException $e) {
+            $this->app->response()->status(404);
+            $result = array('message' => 'Resource Not Found!');
+        } catch (Exception $e) {
+            $this->app->response()->status(400);
+            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+        }
+        $this->app->response()->header('X-Powered-By', 'ongteu');
+        $mediaType = $this->app->request()->getMediaType();
+        if ($mediaType == 'application/xml') {
+            $this->app->response()->header('Content-Type', 'application/xml');
+            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
+        } else {
+            $this->app->response->headers->set('Content-Type', 'application/json');
+            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+        }
+    }
 
+    
+}
 ?>
