@@ -15,8 +15,10 @@ class MovieTubeCCv3 {
         $this->dbPass = $dbPass;
 
         $this->app = new \Slim\Slim(array(
-            'debug' => true,
-            'mode' => 'development',
+//            'debug' => true,
+//            'mode' => 'development',
+            'debug' => false,
+            'mode' => 'production',
         ));
     }
 
@@ -93,7 +95,6 @@ class MovieTubeCCv3 {
             if (count($films)) {
                 $arrFilms = array();
                 foreach ($films as $film) {
-//                    $data = iterator_to_array($film);
                     $filmGenre = $db->film_genre("film_id = ?", $film['id'])->select("genre_id");
                     $arrFG = array();
                     foreach ($filmGenre as $fg) {
@@ -173,15 +174,13 @@ class MovieTubeCCv3 {
 //            $cache = new NotORM_Cache_File("notorm.cache");
             $date = intval($this->app->request()->get('date'));
             $db = $this->dbConnect();
-            $films = $db->film("isHide = ? ", 0)->select("id, name, year , poster, directors, stars, runtime, releaseDate, plot, 
-                imdbRate, MPAARate, quanlity, movieLink, isHide, countryId, siteId")
+            $films = $db->film(array("isHide = ? " => 0, "countryId = ?" => 1))
+                    ->select("id, name, year , poster, directors, stars, runtime, releaseDate, plot, imdbRate, MPAARate, quanlity, movieLink, isHide, countryId, siteId")
                     ->where("updateDay BETWEEN FROM_UNIXTIME(?) AND NOW()", $date);
             if (count($films)) {
                 $arrFilms = array();
                 foreach ($films as $film) {
-                    $filmGenre = $db->film_genre("film_id = ?", $film['id'])
-                            ->select("genre_id")
-                            ->where("genre_id < 23");
+                    $filmGenre = $db->film_genre("film_id = ?", $film['id'])->select("genre_id")->where("genre_id < 23");
                     $arrFG = array();
                     foreach ($filmGenre as $fg) {
                         array_push($arrFG, $fg['genre_id']);
