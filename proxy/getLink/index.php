@@ -19,19 +19,17 @@ if (!defined('LIB_ROOT')) {
     //Libraries for debug and benckmark
     require(HELP_ROOT . 'XMLHelper.php');
 }
-require 'ChiaAnimeMovie.php';
+
+require 'class.GoogleVideo.php';
+require 'class.MovieTubeCC.php';
+require 'getLink.php';
 
 //$bench = new Ubench;
 //START BenchMark
 //$bench->start();
 
-$dbUser = "s2admin";
-$dbPass = "mdata!6789";
-$dbHost = "localhost";
-$dbName = "ChiaAnimeMovie";
-
-$anime = new ChiaAnimeMovie($dbHost, $dbName, $dbUser, $dbPass);
-$anime->enable();
+$getLink = new getLinkMp4();
+$getLink->enable();
 
 //END BenchMark
 //$bench->end();
