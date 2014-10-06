@@ -10,7 +10,7 @@ if (!defined('LIB_ROOT')) {
     define('HELP_ROOT', dirname(__FILE__) . '/../../helper/');
     //Libraries for run api
     require(LIB_ROOT . 'Slim/Slim.php');
-    require(LIB_ROOT . 'NotORM.php');
+    require(LIB_ROOT . 'simple_html_dom.php');
     require(LIB_ROOT . 'class.File.php');
 //    require(LIB_ROOT . 'Valitron/Validator.php');
     //Libraries for debug and benckmark

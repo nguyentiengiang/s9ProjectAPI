@@ -66,8 +66,10 @@ class getLinkMp4 {
         $result = null;
         try {
             $id = $this->app->request()->get('id');
-            $episode = isset($this->app->request()->get('ep')) ? sprintf("%02s", $this->app->request()->get('ep')) : sprintf("%02s", 1);
-            $part = isset($this->app->request()->get('part')) ? sprintf("%02s", $this->app->request()->get('part')) : sprintf("%02s", 1);
+            $ep = $this->app->request()->get('ep');
+            $p = $this->app->request()->get('part');
+            $episode = isset($ep) ? sprintf("%02s", $ep) : sprintf("%02s", 1);
+            $part = isset($part) ? sprintf("%02s", $part) : sprintf("%02s", 1);
             if (!empty($id)) {
                 $watch33tv = new Watch33TV();
                 $result = array("link" => $watch33tv->requestUrlParse(trim($id), $episode, $part));
@@ -97,19 +99,15 @@ class getLinkMp4 {
     public function GetLinkYouTube() {
         $result = null;
         try {
-            if ($this->app->request->isGet()) {
-                $id = $this->app->request()->get('id');
-                if (!empty($id)) {
-                    $content = YouTube::requestContent(trim($id));
-                    $result = array("link" => YouTube::processContent($content));
-                }
-            } else if ($this->app->request->isPost()) {
-                $content = $this->app->request()->post('content');
-                if (!empty($content)) {
-                    $result = array("link" => YouTube2::cleanLinkV3($content));
-                }
+            $id = $this->app->request()->get('id');
+            $content = $this->app->request()->post('content');
+            if (!empty($id)) {
+                $contents = YouTube::requestContent(trim($id));
+                $result = YouTube::processContent($contents);
+            } else if (!empty($content)) {
+                $result = YouTube2::cleanLinkV3($content);
             }
-            if (is_null($result["link"])) {
+            if (is_null($result)) {
                 $this->app->response()->status(404);
                 $result = array("status" => "doesn't exists", "message" => "Get Stream link Fail!");
             }
@@ -134,18 +132,14 @@ class getLinkMp4 {
     public function GetLinkGoogleDrive() {
         $result = null;
         try {
-            if ($this->app->request->isGet()) {
-                $id = $this->app->request()->get('id');
-                if (!empty($id)) {
-                    $result = array("link" => GoogleDrive::requestFromServer($id));
-                }
-            } else if ($this->app->request->isPost()) {
-                $content = $this->app->request()->post('content');
-                if (!empty($content)) {
-                    $result = array("link" => GoogleDrive::cleanLinkV31($content));
-                }
+            $id = $this->app->request()->get('id');
+            $content = $this->app->request()->post('content');
+            if (!empty($id)) {
+                $result = GoogleDrive::requestFromServer($id);
+            } else if (!empty($content)) {
+                $result = GoogleDrive::cleanLinkV31($content);
             }
-            if (is_null($result["link"])) {
+            if (is_null($result)) {
                 $this->app->response()->status(404);
                 $result = array("status" => "doesn't exists", "message" => "Get Stream link Fail!");
             }
@@ -166,7 +160,7 @@ class getLinkMp4 {
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
         }
     }
-    
+
 }
 
 ?>
