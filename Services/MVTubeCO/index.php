@@ -12,10 +12,10 @@ if (!defined('LIB_ROOT')) {
     require(LIB_ROOT . 'Slim/Slim.php');
     require(LIB_ROOT . 'NotORM.php');
     require(LIB_ROOT . 'class.File.php');
-    require(LIB_ROOT . 'Valitron/Validator.php');
+//    require(LIB_ROOT . 'Valitron/Validator.php');
     //Libraries for debug and benckmark
-    require(LIB_ROOT . 'Kint/Kint.class.php');
-    require(LIB_ROOT . 'Ubench.php');
+//    require(LIB_ROOT . 'Kint/Kint.class.php');
+//    require(LIB_ROOT . 'Ubench.php');
     //Libraries for debug and benckmark
     require(HELP_ROOT . 'XMLHelper.php');
 }

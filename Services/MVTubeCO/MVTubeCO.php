@@ -15,8 +15,10 @@ class MVTubeCO {
         $this->dbPass = $dbPass;
 
         $this->app = new \Slim\Slim(array(
-            'debug' => true,
-            'mode' => 'development',
+//            'debug' => true,
+//            'mode' => 'development',
+            'debug' => false,
+            'mode' => 'production',
         ));
     }
 
