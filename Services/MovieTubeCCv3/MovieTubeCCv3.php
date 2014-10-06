@@ -164,7 +164,7 @@ class MovieTubeCCv3 {
             echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
         } else {
             $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE);
         }
     }
 
