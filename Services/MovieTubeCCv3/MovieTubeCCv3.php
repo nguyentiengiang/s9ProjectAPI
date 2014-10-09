@@ -8,6 +8,9 @@
 
 class MovieTubeCCv3 {
 
+    public static $_base69_positionCut = 1;
+//    public static $_base69_arrPositionSwap = array(0 => 1, 1 => 0);
+    
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
         $this->dbHost = $dbHost;
         $this->dbName = $dbName;
@@ -42,7 +45,7 @@ class MovieTubeCCv3 {
     public function index() {
         
     }
-    
+
     /*
      * For All Movies
      */
@@ -104,7 +107,7 @@ class MovieTubeCCv3 {
                             "filmId" => $film['id'],
                             "name" => $film['name'],
                             "year" => $film['year'],
-                            "youtubeId" => $film['movieLink'],
+                            "youtubeId" => \s9ProjectHelper\Base69::encodeType2($film['movieLink'], 1),
                             "thumb" => $film['poster'],
                             "imdb" => $film['imdbRate'],
                             "category" => $arrFG
@@ -137,7 +140,7 @@ class MovieTubeCCv3 {
     /*
      * For English Movies Only
      */
-    
+
     public function getCategoriesEng() {
         $result = null;
         try {
@@ -188,8 +191,8 @@ class MovieTubeCCv3 {
                             "filmId" => $film['id'],
                             "name" => $film['name'],
                             "year" => $film['year'],
-                            "youtubeId" => base64_encode($film['movieLink']),
-                            "thumb" => base64_encode($film['poster']),
+                            "youtubeId" => \s9ProjectHelper\Base69::encodeType2($film['movieLink'], self::$_base69_positionCut),
+                            "thumb" => \s9ProjectHelper\Base69::encodeType2($film['poster'], self::$_base69_positionCut),
                             "imdb" => $film['imdbRate']
                         )) + array("category" => $arrFG);
                     array_push($arrFilms, $filmDetails);
@@ -206,6 +209,7 @@ class MovieTubeCCv3 {
                     $arrDel = array("deletedId" => $arrDelTemp);
                 }
                 $result = array("now" => time()) + array("listFilm" => $arrFilms) + $arrDel;
+                
             } else {
                 $this->app->response()->status(404);
                 $result = array('message' => 'Get English Films Fail!');

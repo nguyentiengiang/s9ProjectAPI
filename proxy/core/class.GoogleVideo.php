@@ -238,20 +238,17 @@ class YouTube {
     static function processContent($content) {
         $link = '';
         $strSrc = urldecode($content);
-//        echo $strSrc; die(); 
-//            File\Log::write($content);
+//        \MyFile\Log::write($content, "getLinkYT", "YT");
         $link = self::cleanLinkTypeClient($strSrc);
         unset($strSrc);
         return $link;
     }
 
     static function processContentClient($content) {
-        //File\Log::write($content);
         $arrLink = null;
         $html = str_get_html($content)->find("div[id=player]", 0);
         $dom = new DOMDocument();
         $dom->loadHTML($html);
-        //Kint::dump($dom->textContent);        die();
         $arr1stElement = explode("ytplayer.config = ", trim($dom->textContent));
         $arr2stElement = explode(";", $arr1stElement[1]);
         $arrJson = json_decode($arr2stElement[0]);

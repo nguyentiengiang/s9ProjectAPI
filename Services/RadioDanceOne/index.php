@@ -14,17 +14,16 @@ if (!defined('LIB_ROOT')) {
     require(LIB_ROOT . 'class.File.php');
     require(LIB_ROOT . 'Valitron/Validator.php');
     //Libraries for debug and benckmark
-    require(LIB_ROOT . 'Kint/Kint.class.php');
-    require(LIB_ROOT . 'Ubench.php');
+//    require(LIB_ROOT . 'Kint/Kint.class.php');
+//    require(LIB_ROOT . 'Ubench.php');
     //Libraries for debug and benckmark
     require(HELP_ROOT . 'XMLHelper.php');
 }
 require 'RadioDanceOne.php';
 
 
-$bench = new Ubench;
-//START BenchMark
-$bench->start();
+//$bench = new Ubench;
+//$bench->start();
 
 $dbUser = "s2admin";
 $dbPass = "mdata!6789";
@@ -34,11 +33,10 @@ $dbName = "RadioDance1";
 $r = new RadioDanceOne($dbHost, $dbName, $dbUser, $dbPass);
 $r->enable();
 
-//END BenchMark
-$bench->end();
-$str .= PHP_EOL . 'Time: ' . $bench->getTime(true) . ' microsecond -> ' . $bench->getTime(false, '%d%s');
-$str .= PHP_EOL . 'MemoryPeak: ' . $bench->getMemoryPeak(true) . ' bytes -> ' . $bench->getMemoryPeak(false, '%.3f%s');
-$str .= PHP_EOL . 'MemoryUsage: ' . $bench->getMemoryUsage(true);
-MyFile\Log::write($str);
+//$bench->end();
+//$str .= PHP_EOL . 'Time: ' . $bench->getTime(true) . ' microsecond -> ' . $bench->getTime(false, '%d%s');
+//$str .= PHP_EOL . 'MemoryPeak: ' . $bench->getMemoryPeak(true) . ' bytes -> ' . $bench->getMemoryPeak(false, '%.3f%s');
+//$str .= PHP_EOL . 'MemoryUsage: ' . $bench->getMemoryUsage(true);
+//MyFile\Log::write($str);
 //unset($str);
 ?>

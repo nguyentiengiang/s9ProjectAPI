@@ -51,11 +51,11 @@ class AppList {
         try {
             $packageName = $this->app->request()->get('package');
             if (!empty($packageName)) {
-                $this->db = $this->dbConnect();
-                $cf = $this->db->admod_config("packageName = ?", $packageName)->select("admod_large as large, " .
+                $db = $this->dbConnect();
+                $cf = $db->admod_config("packageName = ?", $packageName)->select("admod_large as large, " .
                         "admod_small as small, adspaceid, publisherid, packageName, packageNameMarketing, developer, " .
-                        "status as admobEnable, strSeparatorYT, strSeparatorGD, versionApp, isParserOnline, youtube_api_key, " .
-                        "isHd, is_download");
+                        "status as admobEnable, strSeparatorYT, strSeparatorGD, versionApp, isParserOnlineYT as isParserOnline, isParserOnlineGD, youtube_api_key, " .
+                        "isHd as isHD, is_download as isDownload");
                 if (!empty($cf[0])) {
                     $result = $cf[0];
                 } else {
@@ -90,8 +90,8 @@ class AppList {
 //            $cache = new NotORM_Cache_File("notorm.cache");
             $db = $this->dbConnect();
             $cfs = $db->admod_config()->select("packageName, packageNameMarketing, developer, " .
-                    "status as admobEnable, strSeparatorYT, strSeparatorGD, versionApp, isParserOnline, youtube_api_key, " .
-                    "isHd, is_download");
+                    "status as admobEnable, strSeparatorYT, strSeparatorGD, versionApp, isParserOnlineYT, isParserOnlineGD, " .
+                    "youtube_api_key, isHd, is_download");
             if (count($cfs)) {
                 $result = array();
                 foreach ($cfs as $cf) {
@@ -207,49 +207,6 @@ class AppList {
         } else {
             $this->app->response->headers->set('Content-Type', 'application/json');
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
-    }
-
-    public function postUpdateByID($id) {
-        $request = $this->app->request();
-        $name = $request->post('name');
-        $url = $request->post('url');
-        try {
-            $sql = "INSERT INTO commodores (name, url) VALUES (:name, :url)";
-            $s = $this->db->prepare($sql);
-            $s->bindParam("name", $name);
-            $s->bindParam("url", $url);
-            $s->execute();
-        } catch (\PDOException $e) {
-            echo 'Exception: ' . $e->getMessage();
-        }
-    }
-
-    public function putItem($id) {
-        $request = $this->app->request();
-        $name = $request->put('name');
-        $url = $request->put('url');
-
-        try {
-            $sql = "update commodores set url=:url, name=:name where id=:id";
-            $s = $this->db->prepare($sql);
-            $s->bindParam("id", $id);
-            $s->bindParam("name", $name);
-            $s->bindParam("url", $url);
-            $s->execute();
-        } catch (\PDOException $e) {
-            echo 'Exception: ' . $e->getMessage();
-        }
-    }
-
-    public function deleteItem($id) {
-        try {
-            $sql = "delete from commodores where id=:id";
-            $s = $this->db->prepare($sql);
-            $s->bindParam("id", $id);
-            $s->execute();
-        } catch (\PDOException $e) {
-            echo 'Exception: ' . $e->getMessage();
         }
     }
 

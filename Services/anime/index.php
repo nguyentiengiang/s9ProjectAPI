@@ -19,7 +19,7 @@ if (!defined('LIB_ROOT')) {
     //Libraries for debug and benckmark
     require(HELP_ROOT . 'XMLHelper.php');
 }
-require 'ChiaAnimeMovie.php';
+require '../ChiaAnimeMovie/ChiaAnimeMovie.php';
 
 //$bench = new Ubench;
 //START BenchMark
