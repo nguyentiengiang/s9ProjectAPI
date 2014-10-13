@@ -3,7 +3,7 @@
 \Slim\Slim::registerAutoloader();
 
 /*
- * 
+ * Youtify.com
  */
 
 class Youtify {
@@ -37,47 +37,40 @@ class Youtify {
         $this->app->run();
     }
 
-    function dbConnect($cache = null) {
-        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
-        $db = new \NotORM($pdo, null, $cache);
-        return $db;
-    }
-
     public function index() {
-        
+        $status = 200;
+        $body = array("result" => array("message" => "Wellcome to Youtify APIs"));
+        $headers = array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
     }
 
     public function getCategories() {
-        $result = null;
+        $status = 200;
+        $headers = array();
+        $body = array();
         try {
             ORM::configure($this->ORMConfig);
             $categories = ORM::for_table("Category")->select_many(array("cateId" => "id", "cateName" => "name"))->find_array();
             if (!empty($categories)) {
-                $result = $categories;
+                $body = array("result" => $categories);
             } else {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Get Categories Fail!');
+                $status = 404;
+                $body = array("result" => array('message' => 'Get Categories Fail!'));
             }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
         } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            \MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), "_ResultRequestException", APP_NAME);
         }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
     }
 
     public function getPlaylistsByCategoryId() {
-        $result = null;
+        $status = 200;
+        $headers = array();
+        $body = array();
         try {
             $id = intval($this->app->request->get("id"));
             ORM::configure($this->ORMConfig);
@@ -90,21 +83,20 @@ class Youtify {
                 $status = 404;
                 $body = array("result" => array('message' => 'Get Playlists Fail!'));
             }
-        } catch (ResourceNotFoundException $e) {
-            $status = 404;
-            $body = array("result" => array('message' => 'Resource Not Found!'));
         } catch (Exception $e) {
-            $status = 400;
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            \MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), "_ResultRequestException", APP_NAME);
         }
-        $headers = array("Content-Type" => $this->app->request()->getMediaType());
-        s9ProjectHelper\AppResponeHelper::result(
-                $this->app->response, new s9ProjectHelper\RequestResult($status, $headers, $body)
-        );
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
     }
 
     public function getVideosByPlaylistId() {
-        $status = 200; $headers = array(); $body = array();
+        $status = 200;
+        $headers = array();
+        $body = array();
         try {
             $id = intval($this->app->request->get("id"));
             ORM::configure($this->ORMConfig);
@@ -123,17 +115,14 @@ class Youtify {
                 $status = 404;
                 $body = array("result" => array("message" => "Get Videos Fail!"));
             }
-        } catch (ResourceNotFoundException $e) {
-            $status = 404;
-            $body = array("result" => array("message" => "Resource Not Found!"));
         } catch (Exception $e) {
-            $status = 400;
-            $body = array("result" => array("message" => "Broken request!","error" => $e->getMessage()));
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            \MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), "_ResultRequestException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9ProjectHelper\AppResponeHelper::result(
-                $this->app->response, new s9ProjectHelper\RequestResult($status, $headers, $body)
-        );
+        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
     }
 
 }

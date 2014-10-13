@@ -5,7 +5,7 @@
  * and open the template in the editor.
  */
 
-namespace s9ProjectHelper;
+namespace s9Helper;
 
 class ArrayToXML {
 

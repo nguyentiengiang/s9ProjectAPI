@@ -49,7 +49,6 @@ class AppList {
     public function getConfigByPackage() {
         $result = null;
         try {
-            $appName = $this->app->request()->get('app');
             $packageName = $this->app->request()->get('package');
             if (!empty($packageName)) {
                 $db = $this->dbConnect();

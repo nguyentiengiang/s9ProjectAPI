@@ -9,13 +9,23 @@
 class MovieTubeCCv3 {
 
     public static $_base69_positionCut = 1;
+
 //    public static $_base69_arrPositionSwap = array(0 => 1, 1 => 0);
-    
+
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
         $this->dbHost = $dbHost;
         $this->dbName = $dbName;
         $this->dbUser = $dbUser;
         $this->dbPass = $dbPass;
+
+        $this->ORMConfig = array(
+            'connection_string' => 'mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName,
+            'username' => $this->dbUser,
+            'password' => $this->dbPass,
+            'driver_options' => array(
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+            ),
+        );
 
         $this->app = new \Slim\Slim(array(
 //            'debug' => true,
@@ -146,7 +156,7 @@ class MovieTubeCCv3 {
         try {
 //            $cache = new NotORM_Cache_File("notorm.cache");
             $db = $this->dbConnect();
-            $genres = $db->genre()->select("id as cateId, name as cateName")->where("isHide = ?", 0);
+            $genres = $db->genre()->select("id as cateId, name as cateName")->where("status = ?", 1);
             $result = array();
             foreach ($genres as $genre) {
                 $data = iterator_to_array($genre);
@@ -156,6 +166,7 @@ class MovieTubeCCv3 {
             $this->app->response()->status(404);
             $result = array('message' => 'Resource Not Found!');
         } catch (Exception $e) {
+
             $this->app->response()->status(400);
             $this->app->response()->header('X-Status-Reason', $e->getMessage());
         }
@@ -176,44 +187,45 @@ class MovieTubeCCv3 {
 //            $cache = new NotORM_Cache_File("notorm.cache");
             $date = intval($this->app->request()->get('date'));
             $db = $this->dbConnect();
-            $films = $db->film(array("isHide = ? " => 0, "countryId = ?" => 1))
-                    ->select("id, name, year , poster, directors, stars, runtime, releaseDate, plot, imdbRate, MPAARate, quanlity, movieLink, isHide, countryId, siteId")
-                    ->where("updateDay BETWEEN FROM_UNIXTIME(?) AND NOW()", $date);
-            if (count($films)) {
-                $arrFilms = array();
-                foreach ($films as $film) {
-                    $filmGenre = $db->film_genre("film_id = ?", $film['id'])->select("genre_id")->where("genre_id < 23");
-                    $arrFG = array();
-                    foreach ($filmGenre as $fg) {
-                        array_push($arrFG, $fg['genre_id']);
-                    }
-                    $filmDetails = array("film" => array(
-                            "filmId" => $film['id'],
-                            "name" => $film['name'],
-                            "year" => $film['year'],
-                            "youtubeId" => \s9ProjectHelper\Base69::encodeType2($film['movieLink'], self::$_base69_positionCut),
-                            "thumb" => \s9ProjectHelper\Base69::encodeType2($film['poster'], self::$_base69_positionCut),
-                            "imdb" => $film['imdbRate']
-                        )) + array("category" => $arrFG);
-                    array_push($arrFilms, $filmDetails);
+            $films = $db->film(array("is_hide = ? " => 0, "country_id = ?" => 1))
+                    ->select("id, name, year, youtube_id, thumb, imdb")
+                    ->where("update_day BETWEEN FROM_UNIXTIME(?) AND NOW()", $date);
+
+            $arrFilms = array();
+            foreach ($films as $film) {
+                $filmGenre = $db->film_genre("film_id = ?", $film['id'])->select("genre_id");
+                $arrFG = array();
+                foreach ($filmGenre as $fg) {
+                    array_push($arrFG, $fg['genre_id']);
                 }
-                $arrDel = array();
-                if ($date != 0) {
-                    $delIds = $db->film(array("countryId = ?" => 1, "isHide = ?" => 1))
-                            ->select("id")
-                            ->where("updateDay BETWEEN FROM_UNIXTIME(?) AND NOW()", $date);
-                    $arrDelTemp = array();
-                    foreach ($delIds as $delId) {
-                        array_push($arrDelTemp, $delId['id']);
-                    }
-                    $arrDel = array("deletedId" => $arrDelTemp);
-                }
-                $result = array("now" => time()) + array("listFilm" => $arrFilms) + $arrDel;
-                
-            } else {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Get English Films Fail!');
+                $filmDetails = array("film" => array(
+                        "filmId" => $film['id'],
+                        "name" => $film['name'],
+                        "year" => $film['year'],
+                        "youtubeId" => \s9Helper\Base69::encodeType2($film['youtube_id'], self::$_base69_positionCut),
+                        "thumb" => \s9Helper\Base69::encodeType2($film['thumb'], self::$_base69_positionCut),
+                        "imdb" => $film['imdb']
+                    )) + array("category" => $arrFG);
+                array_push($arrFilms, $filmDetails);
             }
+            $arrDel = array();
+            if ($date != 0) {
+                $delIds = $db->film(array("country_id = ?" => 1, "is_hide = ?" => 1))
+                        ->select("id")
+                        ->where("update_day BETWEEN FROM_UNIXTIME(?) AND NOW()", $date);
+                $arrDelTemp = array();
+                foreach ($delIds as $delId) {
+                    array_push($arrDelTemp, $delId['id']);
+                }
+                $arrDel = array("deletedId" => $arrDelTemp);
+            }
+            $result = array("now" => time()) + array("listFilm" => $arrFilms) + $arrDel;
+
+//            if (count($films)) {
+//            } else {
+//                $this->app->response()->status(404);
+//                $result = array('message' => 'Get English Films Fail!');
+//            }
         } catch (ResourceNotFoundException $e) {
             $this->app->response()->status(404);
             $result = array('message' => 'Resource Not Found!');

@@ -1,6 +1,6 @@
 <?php
 
-namespace s9ProjectHelper;
+namespace s9Helper;
 
 class Base69 {
 

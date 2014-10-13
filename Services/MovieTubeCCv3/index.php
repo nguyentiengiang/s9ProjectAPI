@@ -14,7 +14,7 @@ if (!defined('LIB_ROOT')) {
     require(LIB_ROOT . 'class.File.php');
 //    require(LIB_ROOT . 'Valitron/Validator.php');
     //Libraries for debug and benckmark
-    require(LIB_ROOT . 'Kint/Kint.class.php');
+//    require(LIB_ROOT . 'Kint/Kint.class.php');
 //    require(LIB_ROOT . 'Ubench.php');
     //Libraries for debug and benckmark
     require(HELP_ROOT . 'XMLHelper.php');
@@ -28,8 +28,8 @@ require 'MovieTubeCCv3.php';
 
 $dbUser = "s2admin";
 $dbPass = "mdata!6789";
-$dbHost = "localhost";
-$dbName = "MovieTubeCCv3";
+$dbHost = "mdata.mobi";
+$dbName = "MovieTubeCCv2";
 
 $movie = new MovieTubeCCv3($dbHost, $dbName, $dbUser, $dbPass);
 $movie->enable();

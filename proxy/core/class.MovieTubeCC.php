@@ -11,7 +11,7 @@ class MovieTubeCC {
 
     function requestUrlParse($siteId) {
         $link = '';
-        $url = 'http://www.youtubeonsale.com/index.php';
+        $url = 'http://movietube.cc/index.php';
         $postData = array('c' => "result", 'a' => "getplayerinfo", 'p' => "{\"KeyWord\":\"" . $siteId . "\"}");
         $postString = http_build_query($postData);
         $opts = array('http' =>
@@ -44,12 +44,13 @@ class MovieTubeCC {
             if (!empty($html)) {
                 try {
                     $link = array_shift($html->find("source"))->src;
+                    dd($link);
                     $html->clear();
                 } catch (Exception $exc) {
                     $link = $strSrc;
                 }
             } else {
-                File\Log::write($exc . " " . $id);
+                \MyFile\Log::write($exc . " " . $id);
             }
         }
         return $link;
