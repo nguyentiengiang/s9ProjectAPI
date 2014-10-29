@@ -1,6 +1,6 @@
 <?php
 
-\Slim\Slim::registerAutoloader();
+Slim\Slim::registerAutoloader();
 
 /*
  * MVTubeCO 

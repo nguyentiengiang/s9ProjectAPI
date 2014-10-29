@@ -5,8 +5,8 @@
  * 2 modes: DEBUG and RELEASE
  */
 
-define("MODE_APP", "DEBUG");
-//define("MODE_APP", "RELEASE");
+//define("MODE_APP", "DEBUG");
+define("MODE_APP", "RELEASE");
 
 /*
  * REQUIRE for run APIs

@@ -182,7 +182,7 @@ class GoogleDrive {
     }
 
     static function cleanLinkV31($strSrc) {
-        \MyFile\Log::write($strSrc, "proxy", "proxyGD");
+        //\s9Helper\MyFile\Log::write($strSrc, "proxy", "proxyGD");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
 
@@ -320,7 +320,7 @@ class YouTube {
     }
 
     public static function cleanLinkTypeClientv2($strSrc) {
-        s9Helper\MyFile\Log::write($strSrc, "proxy", "proxyYT");
+        //\s9Helper\MyFile\Log::write($strSrc, "proxy", "proxyYT");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
             $arrTemp = array();
@@ -397,7 +397,7 @@ class YouTube {
 class YouTube2 {
 
     static function cleanLinkV3($strSrc) {
-        s9Helper\MyFile\Log::write($strSrc, "proxy", "proxyYT2");
+        //s9Helper\MyFile\Log::write($strSrc, "proxy", "proxyYT2");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
 

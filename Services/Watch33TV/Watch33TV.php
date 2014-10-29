@@ -1,18 +1,14 @@
 <?php
-
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
+//Autoload Slim
 \Slim\Slim::registerAutoloader();
 
 /*
- * id, `name`, `year`, thumb, imdb, youtube_id, is_hide, 
- * country_id, create_day, update_day, site_id, type_link
+ * Watch33.tv
  */
 
 class Watch33TV {
+
+    public static $_base69_positionCut = 1;
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
         // Start data config
@@ -44,23 +40,129 @@ class Watch33TV {
 
     public function enable() {
         $this->app->get('/', array($this, 'index'));
-        $this->app->get('/', array($this, 'index'));
+        $this->app->get('/GetCategory', array($this, 'GetCategories'));
+        $this->app->get('/AllFilm', array($this, 'GetAllFilms'));
+        $this->app->get('/GetEpisodes', array($this, 'GetEpisodesByFilm'));
         $this->app->post('/postAdd', array($this, 'postAddNew'));
         $this->app->post('/postUpdate/:id', array($this, 'postUpdateByID'));
         $this->app->run();
     }
 
-    function dbConnect($cache = null) {
-        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
-        $db = new \NotORM($pdo, null, $cache);
-        return $db;
+    public function index() {
+        $status = 200;
+        $body = array("result" => array("message" => "Wellcome to " . APP_NAME . " APIs"));
+        $headers = array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
-    public function index() {
-        
+    public function GetCategories() {
+        $status = 200;
+        $headers = array();
+        $body = array();
+        try {
+            ORM::configure($this->ORMConfig);
+            $genres = ORM::for_table("genre")->select_many(array("cateId" => "id", "cateName" => "name"))->where_equal("status", 1)->find_array();
+            $countries = ORM::for_table("country")->select_many(array("countryId" => "id", "countryName" => "name"))->where_equal("status", 1)->find_array();
+            $body = array("result" => array("listCategory" => $genres) + array("listCountry" => $countries));
+        } catch (Exception $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
+        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
-    
-    
+
+    public function GetAllFilms() {
+        $status = 200;
+        $headers = array();
+        $body = array();
+        try {
+            $date = intval($this->app->request()->get('date'));
+            $countryId = intval($this->app->request()->get('lang'));
+            ORM::configure($this->ORMConfig);
+            //Field film table
+            $strTbFilm = "film";
+            $arrFilmField = array("DISTINCT(site_id)", "id", "name", "year", "thumb", "imdb", "country_id", "site_id", "type_link");
+            $arrFilmCondition = array("is_hide" => 0);
+            if (!empty($countryId)) {
+                $arrFilmCondition = array("is_hide" => 0, "country_id" => $countryId);
+            }
+            $strFilmDate = "update_day BETWEEN FROM_UNIXTIME(?) AND NOW()";
+            //END Field
+
+            $films = ORM::for_table($strTbFilm)->select_many_expr($arrFilmField)->where_equal($arrFilmCondition)
+                    ->where_raw($strFilmDate, $date)->group_by("site_id")->order_by_asc("country_id")
+                    ->find_array();
+            $arrFilms = array();
+            foreach ($films as $film) {
+                if (intval($film['type_link']) === 2) {
+                    $filmDetails = array(
+                        "filmId" => $film['id'],
+                        "name" => trim($film['name']),
+                        "year" => $film['year'],
+                        "thumb" => s9Helper\Security\Base69::encodeType2(trim($film['thumb']), self::$_base69_positionCut),
+                        "imdb" => $film['imdb'],
+                        "countryId" => $film['country_id'],
+                        "siteId" => $film['site_id']
+                    );
+                } else {
+                    $filmDetails = array(
+                        "filmId" => $film['id'],
+                        "name" => trim($film['name']),
+                        "year" => $film['year'],
+                        "thumb" => s9Helper\Security\Base69::encodeType2(trim($film['thumb']), self::$_base69_positionCut),
+                        "imdb" => $film['imdb'],
+                        "countryId" => $film['country_id'],
+                    );
+                }
+                array_push($arrFilms, $filmDetails);
+            }
+            $arrDel = array();
+            if ($date != 0) {
+                $arrFilmDelCondition = array("is_hide" => 1);
+                $delIds = ORM::for_table($strTbFilm)->select_many("id")->where_equal($arrFilmDelCondition)
+                        ->find_array();
+                $arrDelTemp = array();
+                foreach ($delIds as $delId) {
+                    array_push($arrDelTemp, $delId['id']);
+                }
+                $arrDel = array("deletedId" => $arrDelTemp);
+            }
+            $body = array("result" => (array("now" => time()) + array("listFilm" => $arrFilms) + $arrDel));
+        } catch (Exception $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
+        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType(), "Keep-Alive" => 20);
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
+    }
+
+    public function GetEpisodesByFilm() {
+        $status = 200;
+        $headers = array();
+        $body = array();
+        try {
+            $id = intval($this->app->request()->get('id'));
+            ORM::configure($this->ORMConfig);
+            $episodes = ORM::for_table("episodes")->select_many(array("epId" => "chap_id", "link"))->where_equal("film_id", $id)->find_array();
+            $arrEp = array();
+            foreach ($episodes as $value) {
+                array_push($arrEp, array("epId" => $value["epId"], "link" => s9Helper\Security\Base69::encodeType2(trim($value['link']), self::$_base69_positionCut)));
+            }
+            $body = array("result" => array("filmId" => $id) + array("listEpisodes" => $arrEp));
+        } catch (Exception $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
+        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
+    }
 
     public function postAddNew() {
         $post = $this->app->request()->post();
@@ -135,12 +237,12 @@ class Watch33TV {
                 try {
                     $db = $this->dbConnect();
                     $db->transaction = "BEGIN";
-                    
+
                     $timeZone = 'America/Los_Angeles';
                     $dateTime = new DateTime();
                     $dateTime->setTimeZone(new DateTimeZone($timeZone));
                     $now = $dateTime->format('Y-m-d H:i:s');
-                    
+
                     $db->film("id = ?", intval($id))->update(array(
                         "id" => intval($id), "name" => $post['name'], "year" => $post['year'], "thumb" => $post['thumb'],
                         "imdb" => $post['imdb'], "is_hide" => $post['is_hide'], "country_id" => $post['country_id'], "update_day" => $now

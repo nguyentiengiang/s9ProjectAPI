@@ -1,7 +1,7 @@
 <?php
 
 if (!defined("LIB_ROOT")) {
-    define("LIB_ROOT", dirname(__FILE__) . "../../lib/");
+    define("LIB_ROOT", dirname(__FILE__) . "/../lib/");
 }
 
 //APIs Core libraries
