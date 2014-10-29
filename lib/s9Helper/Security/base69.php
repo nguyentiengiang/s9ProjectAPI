@@ -1,6 +1,6 @@
 <?php
 
-namespace s9Helper;
+namespace s9Helper\Security;
 
 class Base69 {
 
@@ -56,5 +56,3 @@ class Base69 {
     }
 
 }
-
-?>

@@ -9,7 +9,7 @@
 
 class MovieTubeCC {
 
-    function requestUrlParse($siteId) {
+    static function requestUrlParse($siteId) {
         $link = '';
         $url = 'http://movietube.cc/index.php';
         $postData = array('c' => "result", 'a' => "getplayerinfo", 'p' => "{\"KeyWord\":\"" . $siteId . "\"}");

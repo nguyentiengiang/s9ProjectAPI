@@ -9,17 +9,31 @@
 class ChiaAnimeMovie {
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
+        // Start data config
         $this->dbHost = $dbHost;
         $this->dbName = $dbName;
         $this->dbUser = $dbUser;
         $this->dbPass = $dbPass;
 
-        $this->app = new \Slim\Slim(array(
-            'debug' => true,
-            'mode' => 'development',
-//            'debug' => false,
-//            'mode' => 'production',
-        ));
+        $this->ORMConfig = array(
+            'connection_string' => 'mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName,
+            'username' => $this->dbUser,
+            'password' => $this->dbPass,
+            'driver_options' => array(
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+            ),
+            'return_result_sets' => false
+        );
+        // End data config
+        // Start Slim Config
+        $arrSlimConfig = array();
+        if (MODE_APP == "RELEASE") {
+            $arrSlimConfig = array('debug' => false, 'mode' => 'production');
+        } else {
+            $arrSlimConfig = array('debug' => true, 'mode' => 'development');
+        }
+        $this->app = new \Slim\Slim($arrSlimConfig);
+        // End Slim Config
     }
 
     public function enable() {
@@ -30,59 +44,56 @@ class ChiaAnimeMovie {
         $this->app->run();
     }
 
-    function dbConnect($cache = null) {
-        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
-        $db = new \NotORM($pdo, null, $cache);
-        return $db;
-    }
-
     public function index() {
-        
+        $status = 200;
+        $body = array("result" => array("message" => "Wellcome to " . APP_NAME . " APIs"));
+        $headers = array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
     public function GetCategories() {
-        $result = null;
+        $status = 200;
+        $headers = array();
+        $body = array();
         try {
-            $db = $this->dbConnect();
-            $categories = $db->Category("is_hide = ?", 0)->select("id, name");
-            $result = array();
-            foreach ($categories as $category) {
-                $data = iterator_to_array($category);
-                array_push($result, $data);
+            ORM::configure($this->ORMConfig);
+            $categories = ORM::for_table("Category")->select_many(array("id", "name"))->where_equal(array("is_hide" => 0))->find_array();
+
+            if (count($categories)) {
+                $body = array("result" => $categories);
+            } else {
+                $status = 404;
+                $body = array("result" => array('message' => 'Get Categories Fail!'));
             }
-            if (empty($result)) {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Get Categories Fail!');
-            }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
         } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "app");
     }
 
     public function GetListFilm() {
-        $result = null;
+        $status = 200;
+        $headers = array();
+        $body = array();
         try {
             $date = intval($this->app->request()->get('date'));
-            $db = $this->dbConnect();
-            $films = $db->Film(array("is_hide = ? " => 0))
-                    ->select("id, name, thumb, number_chap, summary, status, type")
-                    ->where("update_day BETWEEN FROM_UNIXTIME(?) AND NOW()", $date);
+            ORM::configure($this->ORMConfig);
+            //Field film table
+            $strTbFilm = "Film";
+            $arrFilmField = array("id", "name", "thumb", "number_chap", "summary", "status", "type");
+            $arrFilmCondition = array("is_hide" => 0);
+            $strFilmDate = "update_day BETWEEN FROM_UNIXTIME(?) AND NOW()";
+
+            $films = ORM::for_table($strTbFilm)->select_many($arrFilmField)->where_equal($arrFilmCondition)
+                            ->where_raw($strFilmDate, $date)->find_array();
             $arrFilms = array();
             foreach ($films as $film) {
-                $filmGenre = $db->FilmCategory("IdFilm = ?", $film['id'])->select("IdCat")->order("IdCat ASC");
+                $filmGenre = ORM::for_table("FilmCategory")->select("IdCat")
+                                ->where_equal("IdFilm", $film['id'])->order_by_asc("IdCat")->find_array();
                 $filmDetails = array(
                     "id" => $film['id'],
                     "name" => $film['name'],
@@ -96,95 +107,83 @@ class ChiaAnimeMovie {
             }
             $arrDel = array();
             if ($date != 0) {
-                $delIds = $db->Film("is_hide = ?", 1)
-                        ->select("id")
-                        ->where("update_day BETWEEN FROM_UNIXTIME(?) AND NOW()", $date);
+                $arrFilmDelCondition = array("is_hide" => 1);
+                $delIds = ORM::for_table($strTbFilm)->select_many("id")->where_equal($arrFilmDelCondition)
+                        ->find_array();
                 $arrDelTemp = array();
                 foreach ($delIds as $delId) {
                     array_push($arrDelTemp, $delId['id']);
                 }
                 $arrDel = array("deletedId" => $arrDelTemp);
             }
-            $result = array("now" => time()) + array("list" => $arrFilms) + $arrDel;
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
+            $body = array("result" => (array("now" => time()) + array("list" => $arrFilms) + $arrDel));
         } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "anime");
     }
 
     public function GetEpisodesByFilm() {
-        $result = null;
+        $status = 200;
+        $headers = array();
+        $body = array();
         try {
             $id = $this->app->request()->get('id');
-            $db = $this->dbConnect();
-            $infoFilm = $db->Film(array("is_hide = ?" => 0, "id = ?" => $id))->select("id, name, thumb, number_chap, summary, status, type");
-            $filmDetails = array(
-                "id" => $id,
-                "name" => $infoFilm[$id]['name'],
-                "thumb" => base64_encode($infoFilm[$id]['thumb']),
-                "totalChap" => $infoFilm[$id]['number_chap'],
-                "summary" => $infoFilm[$id]['summary'],
-                "status" => $infoFilm[$id]['status'],
-                "type" => $infoFilm[$id]['type']
-            );
-            $arrEp = array();
-            if (intval($infoFilm[$id]['type']) === 1) {
-                $eps = $db->Episodes("film_id = ?", $id)->select("chap_Id, name, linkmp4, image");
-                foreach ($eps as $ep) {
-                    $dataEncode = array(
-                        "chapId" => $ep["chap_Id"],
-                        "name" => $ep["name"],
-                        "linkMp4" => base64_encode($ep["linkmp4"]),
-                        "image" => base64_encode($ep["image"]),
-                    );
-                    array_push($arrEp, $dataEncode);
+            ORM::configure($this->ORMConfig);
+            $infoFilm = ORM::for_table("Film")->select_many(array("id", "name", "thumb", "number_chap", "summary", "status", "type"))
+                            ->where_equal(array("is_hide" => 0, "id" => $id))->find_one();
+            if (count($infoFilm)) {
+                $filmDetails = array(
+                    "id" => $id,
+                    "name" => $infoFilm['name'],
+                    "thumb" => base64_encode($infoFilm['thumb']),
+                    "totalChap" => $infoFilm['number_chap'],
+                    "summary" => $infoFilm['summary'],
+                    "status" => $infoFilm['status'],
+                    "type" => $infoFilm['type']
+                );
+                $arrEp = array();
+                if (intval($infoFilm['type']) === 1) {
+                    $eps = ORM::for_table("Episodes")->select_many("chap_Id", "name", "linkmp4", "image")
+                            ->where_equal("film_id", $id)->find_array();
+                    foreach ($eps as $ep) {
+                        $dataEncode = array(
+                            "chapId" => $ep["chap_Id"],
+                            "name" => $ep["name"],
+                            "linkMp4" => base64_encode($ep["linkmp4"]),
+                            "image" => base64_encode($ep["image"]),
+                        );
+                        array_push($arrEp, $dataEncode);
+                    }
+                } else if (intval($infoFilm['type']) === 2) {
+                    $eps = ORM::for_table("Episodes")->select_many("chap_Id", "name", "episode_web_id", "image")
+                            ->where_equal("film_id", $id)->find_array();
+                    foreach ($eps as $ep) {
+                        $dataEncode = array(
+                            "chapId" => $ep["chap_Id"],
+                            "name" => $ep["name"],
+                            "linkMp4" => base64_encode("http://www.chia-anime.com/watch-anime-dub/download.php?id=" . $ep["episode_web_id"]),
+                            "image" => base64_encode($ep["image"]),
+                        );
+                        array_push($arrEp, $dataEncode);
+                    }
                 }
-            } else if (intval($infoFilm[$id]['type']) === 2) {
-                $eps = $db->Episodes("film_id = ?", $id)->select("chap_Id, name, episode_web_id, image");
-                foreach ($eps as $ep) {
-                    $dataEncode = array(
-                        "chapId" => $ep["chap_Id"],
-                        "name" => $ep["name"],
-                        "linkMp4" => base64_encode("http://www.chia-anime.com/watch-anime-dub/download.php?id=" . $ep["episode_web_id"]),
-                        "image" => base64_encode($ep["image"]),
-                    );
-                    array_push($arrEp, $dataEncode);
-                }
+                $body = array("result" => array("Film" => $filmDetails) + array("LstEpisode" => $arrEp));
+            } else {
+                $status = 404;
+                $body = array("result" => array('message' => 'Get Episodes Fail!'));
             }
-            $result = array("Film" => $filmDetails) + array("LstEpisode" => $arrEp);
-            if (empty($filmDetails) || empty($arrEp)) {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Get Episodes Fail!');
-            }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
         } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "app");
     }
-
 }
-?>

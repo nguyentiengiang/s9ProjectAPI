@@ -5,9 +5,9 @@
  * and open the template in the editor.
  */
 
-namespace s9Helper;
+namespace s9Helper\MyFile;
 
-class ArrayToXML {
+class XML {
 
     function generate_xml_from_array($array, $node_name) {
         $xml = '';
@@ -31,5 +31,4 @@ class ArrayToXML {
         $xml .= '</' . $node_block . '>';
         return $xml;
     }
-
 }

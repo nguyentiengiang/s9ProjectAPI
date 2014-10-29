@@ -1,42 +1,51 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Define mode for apis application
+ * 2 modes: DEBUG and RELEASE
  */
+define("MODE_APP", "DEBUG");
+//define("MODE_APP", "RELEASE");
 
-if (!defined('LIB_ROOT')) {
-    define('LIB_ROOT', dirname(__FILE__) . '/../../lib/');
-    define('HELP_ROOT', dirname(__FILE__) . '/../../helper/');
-    //Libraries for run api
-    require_once(LIB_ROOT . 'Slim/Slim.php');
-//    require_once(LIB_ROOT . 'NotORM.php');
-    require_once(LIB_ROOT . 'idiorm.php');
-//    require_once(LIB_ROOT . 'paris.php');
-    require_once(LIB_ROOT . 'class.File.php');
-    require_once(LIB_ROOT . 'Valitron/Validator.php');
-    //Libraries for debug and benckmark
-//    require(LIB_ROOT . 'Kint/Kint.class.php');
-    require_once(LIB_ROOT . 'Ubench.php');
+/**
+ * REQUIRE for run APIs
+ * DO NOT Touch this file if must needed
+ */
+require_once "../autoLoad.php";
+
+/*
+ * Define name of api application choose what ever you want
+ */
+define("APP_NAME", "AppList");
+require_once APP_NAME . ".php";
+
+/**
+ * Function call to start Slim APIs application
+ * @return void 
+ */
+function startApp() {
+    $dbUser = "s2admin";
+    $dbPass = "mdata!6789";
+    $dbHost = "localhost";
+    $dbName = "AppConfig";
+
+    $app = new AppList($dbHost, $dbName, $dbUser, $dbPass);
+    $app->enable();
 }
-require_once 'AppList.php';
 
-
-$bench = new Ubench;
-$bench->start();
-
-$dbUser = "s2admin";
-$dbPass = "mdata!6789";
-$dbHost = "localhost";
-$dbName = "AppConfig";
-
-$anime = new AppList($dbHost, $dbName, $dbUser, $dbPass);
-$anime->enable();
-
-$bench->end();
-$str .= PHP_EOL . 'Time: ' . $bench->getTime(true) . ' microsecond -> ' . $bench->getTime(false, '%d%s');
-$str .= PHP_EOL . 'MemoryPeak: ' . $bench->getMemoryPeak(true) . ' bytes -> ' . $bench->getMemoryPeak(false, '%.3f%s');
-$str .= PHP_EOL . 'MemoryUsage: ' . $bench->getMemoryUsage(true);
-MyFile\Log::write($str, "AppConfig", "tester2");
-unset($str);
-?>
+/**
+ * Run Slim app in mode defined
+ */
+if (MODE_APP === "RELEASE") {
+    startApp();
+} else {
+    $bench = new Ubench;
+    $bench->start();
+    startApp();
+    $bench->end();
+    $str = PHP_EOL . 'Time: ' . $bench->getTime(true) . ' microsecond -> ' . $bench->getTime(false, '%d%s');
+    $str .= PHP_EOL . 'MemoryPeak: ' . $bench->getMemoryPeak(true) . ' bytes -> ' . $bench->getMemoryPeak(false, '%.3f%s');
+    $str .= PHP_EOL . 'MemoryUsage: ' . $bench->getMemoryUsage(true);
+    s9Helper\MyFile\Log::write($str, APP_NAME, "TestDEBUG");
+    unset($str);
+}

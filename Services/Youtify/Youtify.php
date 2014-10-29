@@ -1,5 +1,9 @@
 <?php
 
+/*
+ * Slim Auto Loader
+ */
+
 \Slim\Slim::registerAutoloader();
 
 /*
@@ -9,6 +13,8 @@
 class Youtify {
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
+
+        // Start data config
         $this->dbHost = $dbHost;
         $this->dbName = $dbName;
         $this->dbUser = $dbUser;
@@ -22,11 +28,16 @@ class Youtify {
                 \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
             ),
         );
-
-        $this->app = new \Slim\Slim(array(
-            'debug' => true,
-            'mode' => 'development',
-        ));
+        // End data config
+        // Start Slim Config
+        $arrSlimConfig = array();
+        if (MODE_APP == "RELEASE") {
+            $arrSlimConfig = array('debug' => false, 'mode' => 'production');
+        } else {
+            $arrSlimConfig = array('debug' => true, 'mode' => 'development');
+        }
+        $this->app = new \Slim\Slim($arrSlimConfig);
+        // End Slim Config
     }
 
     public function enable() {
@@ -51,7 +62,7 @@ class Youtify {
         try {
             ORM::configure($this->ORMConfig);
             $categories = ORM::for_table("Category")->select_many(array("cateId" => "id", "cateName" => "name"))->find_array();
-            if (!empty($categories)) {
+            if (count($categories) > 0) {
                 $body = array("result" => $categories);
             } else {
                 $status = 404;
@@ -77,7 +88,7 @@ class Youtify {
             $playlists = ORM::for_table("Playlist")
                             ->select_many(array("pId" => "id", "name", "thumb" => "img"))
                             ->where_equal(array("is_hide" => 0, "category_id" => $id))->find_array();
-            if (!empty($playlists)) {
+            if (count($playlists) > 0) {
                 $body = array("result" => $playlists);
             } else {
                 $status = 404;
@@ -101,7 +112,7 @@ class Youtify {
             $id = intval($this->app->request->get("id"));
             ORM::configure($this->ORMConfig);
             $videos = ORM::for_table("Video")->select_many("name", "youtube_id")->where_equal("playlist_id", $id)->find_array();
-            if (!empty($videos)) {
+            if (count($videos) > 0) {
                 $playlist = ORM::for_table("Playlist")->select_many("intro")->find_one($id);
                 $arrVideos = array();
                 foreach ($videos as $video) {
@@ -126,5 +137,3 @@ class Youtify {
     }
 
 }
-
-?>

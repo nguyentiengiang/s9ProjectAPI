@@ -50,4 +50,3 @@ if (MODE_APP === "RELEASE") {
     MyFile\Log::write($str, APP_NAME, "TestDEBUG");
     unset($str);
 }
-?>

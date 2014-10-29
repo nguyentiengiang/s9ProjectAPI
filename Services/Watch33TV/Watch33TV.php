@@ -15,20 +15,35 @@
 class Watch33TV {
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
+        // Start data config
         $this->dbHost = $dbHost;
         $this->dbName = $dbName;
         $this->dbUser = $dbUser;
         $this->dbPass = $dbPass;
 
-        $this->app = new \Slim\Slim(array(
-            'debug' => true,
-            'mode' => 'development',
-//            'debug' => false,
-//            'mode' => 'production',
-        ));
+        $this->ORMConfig = array(
+            'connection_string' => 'mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName,
+            'username' => $this->dbUser,
+            'password' => $this->dbPass,
+            'driver_options' => array(
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+            ),
+            'return_result_sets' => false
+        );
+        // End data config
+        // Start Slim Config
+        $arrSlimConfig = array();
+        if (MODE_APP == "RELEASE") {
+            $arrSlimConfig = array('debug' => false, 'mode' => 'production');
+        } else {
+            $arrSlimConfig = array('debug' => true, 'mode' => 'development');
+        }
+        $this->app = new \Slim\Slim($arrSlimConfig);
+        // End Slim Config
     }
 
     public function enable() {
+        $this->app->get('/', array($this, 'index'));
         $this->app->get('/', array($this, 'index'));
         $this->app->post('/postAdd', array($this, 'postAddNew'));
         $this->app->post('/postUpdate/:id', array($this, 'postUpdateByID'));
@@ -44,6 +59,8 @@ class Watch33TV {
     public function index() {
         
     }
+    
+    
 
     public function postAddNew() {
         $post = $this->app->request()->post();

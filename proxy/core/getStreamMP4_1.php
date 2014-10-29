@@ -9,15 +9,12 @@
 class getStreamLinkMP4 {
 
     public function __construct() {
-        // Start Slim Config
-        $arrSlimConfig = array();
-        if (MODE_APP == "RELEASE") {
-            $arrSlimConfig = array('debug' => false, 'mode' => 'production');
-        } else {
-            $arrSlimConfig = array('debug' => true, 'mode' => 'development');
-        }
-        $this->app = new \Slim\Slim($arrSlimConfig);
-        // End Slim Config
+        $this->app = new \Slim\Slim(array(
+//            'debug' => true,
+//            'mode' => 'development',
+            'debug' => false,
+            'mode' => 'production',
+        ));
     }
 
     public function enable() {
@@ -32,10 +29,7 @@ class getStreamLinkMP4 {
     }
 
     public function index() {
-        $status = 200;
-        $body = array("result" => array("message" => "This's private problem! Do not enter here!"));
-        $headers = array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
+        
     }
 
     public function GetLinkMovieTube() {
@@ -43,7 +37,8 @@ class getStreamLinkMP4 {
         try {
             $id = $this->app->request()->get('id');
             if (!empty($id)) {
-                $result = array("link" => MovieTubeCC::requestUrlParse(trim($id)));
+                $MovieTubeCC = new MovieTubeCC();
+                $result = array("link" => $MovieTubeCC->requestUrlParse(trim($id)));
             }
             if (is_null($result)) {
                 $this->app->response()->status(404);
@@ -188,7 +183,7 @@ class getStreamLinkMP4 {
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
         }
     }
-
+    
     public function GetLinkGoogleDrive() {
         $result = null;
         try {
@@ -230,7 +225,6 @@ class getStreamLinkMP4 {
             echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
         }
     }
-
 }
 
 ?>

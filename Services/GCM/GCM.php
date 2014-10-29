@@ -14,17 +14,31 @@
 class AppGCM {
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
+        // Start data config
         $this->dbHost = $dbHost;
         $this->dbName = $dbName;
         $this->dbUser = $dbUser;
         $this->dbPass = $dbPass;
 
-        $this->app = new \Slim\Slim(array(
-//            'mode' => 'production',
-//            'debug' => false,
-            'mode' => 'development',
-            'debug' => true,
-        ));
+        $this->ORMConfig = array(
+            'connection_string' => 'mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName,
+            'username' => $this->dbUser,
+            'password' => $this->dbPass,
+            'driver_options' => array(
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+            ),
+            'return_result_sets' => false
+        );
+        // End data config
+        // Start Slim Config
+        $arrSlimConfig = array();
+        if (MODE_APP == "RELEASE") {
+            $arrSlimConfig = array('debug' => false, 'mode' => 'production');
+        } else {
+            $arrSlimConfig = array('debug' => true, 'mode' => 'development');
+        }
+        $this->app = new \Slim\Slim($arrSlimConfig);
+        // End Slim Config
     }
 
     public function enable() {
@@ -34,210 +48,89 @@ class AppGCM {
         $this->app->run();
     }
 
-    function dbConnect($cache = null) {
-        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
-        $db = new \NotORM($pdo, null, $cache);
-        return $db;
-    }
-
     public function index() {
-        
-    }
-
-    public function getConfigByPackage() {
-        $result = null;
-        try {
-            $packageName = $this->app->request()->get('package');
-            if (!empty($packageName)) {
-                $this->db = $this->dbConnect();
-                $cf = $this->db->admod_config("packageName = ?", $packageName)->select("admod_large as large, " .
-                        "admod_small as small, adspaceid, publisherid, packageName, packageNameMarketing, developer, " .
-                        "status as admobEnable, strSeparatorYT, strSeparatorGD, versionApp, isParserOnline, youtube_api_key, " .
-                        "isHd, is_download");
-                if (!empty($cf[0])) {
-                    $result = $cf[0];
-                } else {
-                    $this->app->response()->status(404);
-                    $result = array('message' => 'Get Package Setting Fail!');
-                }
-            } else {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Invalid Parameters!');
-            }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
-        } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
-        }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
-    }
-
-    public function getAll() {
-        $result = null;
-        try {
-//            $cache = new NotORM_Cache_File("notorm.cache");
-            $db = $this->dbConnect();
-            $cfs = $db->GCM_User()->select("deviceId, registrationGcmId, packageName, gMail, isHide");
-            if (count($cfs)) {
-                $result = array();
-                foreach ($cfs as $cf) {
-                    $data = iterator_to_array($cf);
-                    array_push($result, $data);
-                }
-            } else {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Get Package Setting Fail!');
-            }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
-        } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
-        }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $status = 200;
+        $body = array("result" => array("message" => "Wellcome to GCM"));
+        $headers = array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
     public function getToView() {
-        $result = null;
+        $status = 200;
+        $headers = array();
+        $body = array();
+        ORM::configure($this->ORMConfig);
         try {
-            $db = $this->dbConnect();
-            $cfs = $db->GCM_User()->select("packageName, COUNT(1) as 'Devices'")
-                            ->group("packageName")->order("COUNT(1) DESC");
-            if (count($cfs)) {
+            $gcmArr = ORM::for_table("GCM_User")->select_many_expr(array("packageName", "Devices" => "COUNT(1)"))->group_by("packageName")->order_by_expr("COUNT(1) DESC")->find_array();
+            if (count($gcmArr)) {
                 $result = array();
-                foreach ($cfs as $cf) {
-                    $data = iterator_to_array($cf);
-                    $result += array($data['packageName'] => $data['Devices']);
+                foreach ($gcmArr as $element) {
+                    $result += array($element['packageName'] => $element['Devices']);
                 }
+                $body = array("result" => $result);
             } else {
-                $this->app->response()->status(400);
-                $result = array('message' => 'Nothing to do there!');
+                $body = array("result" => array('message' => 'Nothing here :('));
             }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
+        } catch (PDOException $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Data Server executed error");
+            $body = array("result" => array('StatusCode' => 0, 'message' => 'Request Query Broken', 'errors' => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".PDOException", APP_NAME);
         } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array('StatusCode' => 0, "message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
-    }
-
-    public function getConfigByID($id) {
-        $result = null;
-        try {
-            if (intval($id) !== 0) {
-                $this->db = $this->dbConnect();
-                $cf = $this->db->admod_config("id = ?", intval($id))->select(
-                        "app, packageName, packageNameMarketing, developer, admod_large, admod_small, 
-                        adspaceid, publisherid, `status`, is_download, strSeparatorYT, strSeparatorGD, 
-                        versionApp, isParserOnline, youtube_api_key, isHd");
-                if (!empty($cf[0])) {
-                    $result = $cf[0];
-                } else {
-                    $this->app->response()->status(404);
-                    $result = array('message' => 'Get Package Setting Fail!');
-                }
-            } else {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Invalid Parameters!');
-            }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
-        } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
-        }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
     public function postGCMAddNew() {
-        $post = $this->app->request()->post();
-        $result = null;
-        $vaildate = self::ValidatePostGCM($post);
-        if (empty($vaildate)) {
-            try {
-                $db = $this->dbConnect();
-                $db->transaction = "BEGIN";
-                $lastID = $db->GCM_User()->insert(array(
+        $status = 200;
+        $headers = array();
+        $body = array();
+        ORM::configure($this->ORMConfig);
+        try {
+            $post = s9Helper\HandlingRequest\MyRequest::cleanPOST($this->app->request);
+            $vaildate = self::ValidatePostGCM($post);
+            if (empty($vaildate)) {
+                ORM::get_db(ORM::DEFAULT_CONNECTION)->beginTransaction();
+                $updateCf = ORM::for_table('GCM_User')->create();
+                $updateCf->set(array(
                     "deviceId" => $post['deviceId'], "registrationGcmId" => $post['registrationGcmId'],
-                    "packageName" => $post['packageName'], "gMail" => $post['gMail'], "isHide" => 0
-                ));
-                $db->transaction = "COMMIT";
-                $items = $db->GCM_User("id = ?", $lastID);
-                if (count($items) > 0) {
-                    $this->app->response()->status(200);
-                    $result = array('StatusCode' => 1, 'Message' => 'OK');
+                    "packageName" => $post['packageName'], "gMail" => $post['gMail'], 
+                    "isHide" => 0));
+                $updateCf->save();
+                $commitOK = ORM::get_db(ORM::DEFAULT_CONNECTION)->commit();
+                if ($commitOK) {
+                    $body = array("result" => array('StatusCode' => 1, 'Message' => 'OK'));
                 } else {
-                    $this->app->response()->status(200);
-                    $result = array('StatusCode' => 1, 'Message' => 'OK But Not Found');
+                    $rollBackOK = ORM::get_db(ORM::DEFAULT_CONNECTION)->rollBack();
+                    if ($rollBackOK) {
+                        $body = array("result" => array('StatusCode' => 0, 'Message' => 'Invalid Parameters', 'error' => "Rollback transaction!"));
+                    } else {
+                        $body = array("result" => array('StatusCode' => 0, 'Message' => 'Invalid Parameters', 'error' => "Can't rollback right now."));
+                    }
+                    s9Helper\MyFile\Log::write(ORM::get_query_log(ORM::DEFAULT_CONNECTION), "PDOFail", APP_NAME);
                 }
-            } catch (\PDOException $e) {
-                $db->transaction = "ROLLBACK";
-                $result = array(
-                    'StatusCode' => 0, 'Message' => 'Invalid Parameters',
-                    'reasons' => 'Validate broken!', 'errors' => $e->getMessage()
-                );
-            } catch (ResourceNotFoundException $e) {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Resource Not Found!', 'errors' => $e->getMessage());
-            } catch (Exception $e) {
-                $this->app->response()->status(400);
-                $this->app->response()->header('X-Status-Reason', $e->getMessage());
-                $result = array('message' => 'Unknown', 'errors' => $e->getMessage());
+            } else {
+                $body = array("result" => array('StatusCode' => 0, 'message' => 'Valid data fail', 'errors' => $vaildate));
             }
-        } else {
-            $this->app->response()->status(200);
-            $result = array(
-                'StatusCode' => 0, 'Message' => 'Vaildate Failue',
-                'status' => 'error', 'errors' => $vaildate
-            );
+        } catch (PDOException $e) {
+            $status = 500;
+            ORM::get_db(ORM::DEFAULT_CONNECTION)->rollBack();
+            $headers += array("Connection" => "close", "Warning" => "Data Server executed error");
+            $body = array("result" => array('StatusCode' => 0, 'message' => 'Validate field data broken!', 'errors' => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".PDOException", APP_NAME);
+        } catch (Exception $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array('StatusCode' => 0, "message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
     private function ValidatePostGCM($arrayData) {
@@ -245,7 +138,7 @@ class AppGCM {
         Valitron\Validator::langDir(LIB_ROOT . 'Valitron/lang');
         Valitron\Validator::lang('vi');
         $v = new Valitron\Validator($arrayData);
-        $v->rule('required', ['deviceId', 'registrationGcmId', 'packageName']);
+        $v->rule('required', ['registrationGcmId', 'packageName']);
         $v->rule('email', ['gMail']);
         if ($v->validate()) {
             $return = null;

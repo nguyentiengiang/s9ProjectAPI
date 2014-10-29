@@ -275,11 +275,11 @@ class YouTube {
         $arr2stElement = explode(";", $arr1stElement[1]);
         $arrJson = json_decode($arr2stElement[0]);
 
-        $contentSQ = $arrJson->args->url_encoded_fmt_stream_map;
+//        $contentSQ = $arrJson->args->url_encoded_fmt_stream_map;
 //        $signature = $arrJson->args->dashmpd;        
-//        $contentHQ = $arrJson->args->adaptive_fmts;
+        $contentHQ = $arrJson->args->adaptive_fmts;
         //dd($contentSQ);
-        $arrLink = self::cleanLinkTypeServer($contentSQ);
+        $arrLink = self::cleanLinkTypeServer($contentHQ);
         unset($html);
         unset($dom);
         unset($arr1stElement);
@@ -320,7 +320,7 @@ class YouTube {
     }
 
     public static function cleanLinkTypeClientv2($strSrc) {
-        \MyFile\Log::write($strSrc, "proxy", "proxyYT");
+        s9Helper\MyFile\Log::write($strSrc, "proxy", "proxyYT");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
             $arrTemp = array();
@@ -342,7 +342,7 @@ class YouTube {
             }
             $link = $arrHQ + $arrSQ;
         }
-//        echo '<pre>';        print_r($link);        die();
+        
         return $link;
     }
 
@@ -397,7 +397,7 @@ class YouTube {
 class YouTube2 {
 
     static function cleanLinkV3($strSrc) {
-        \MyFile\Log::write($strSrc, "proxy", "proxyYT2");
+        s9Helper\MyFile\Log::write($strSrc, "proxy", "proxyYT2");
         $link = array();
         if ($strSrc != null || $strSrc != '') {
 
