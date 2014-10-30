@@ -9,13 +9,13 @@
  * @file    Services/App/AppList.php
  * @desc    AppList
  * @author  Tien Giang (ongteu)
- * @license BSD/GPLv2
+ * @license Apache License v2
  *
  * Provides a basic respone function for s9Project Helper.
  *
- * copyright (c) TienGiang
- * This source file is subject to the BSD/GPLv2 License that is bundled
- * with this source code in the file license.txt.
+ * copyright (c) 2014 TienGiang
+ * This source file is subject to the Apache License that is bundled
+ * with this source code in the file LICENSE
  */
 class AppList {
 
