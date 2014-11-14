@@ -21,11 +21,11 @@ class MyRequest {
         }
         if ($xss) {
             foreach ($contextAppRequestBody->post() as $keyPost => $valuePost) {
-                $post += array(trim($keyPost) => addslashes(strip_tags(trim($valuePost))));
+                $post += array(trim($keyPost) => strip_tags(trim($valuePost)));
             }
         } else {
             foreach ($contextAppRequestBody->post() as $keyPost => $valuePost) {
-                $post += array(trim($keyPost) => addslashes(trim($valuePost)));
+                $post += array(trim($keyPost) => trim($valuePost));
             }
         }
         return $post;
@@ -36,8 +36,8 @@ class MyRequest {
         if (is_null($contextAppRequestBody)) {
             $contextAppRequestBody = $this->request->get();
         }
-        foreach ($contextAppRequestBody->post() as $keyPost => $valuePost) {
-            $get += array(trim($keyPost) => addslashes(strip_tags(trim($valuePost))));
+        foreach ($contextAppRequestBody->get() as $keyPost => $valuePost) {
+            $get += array(trim($keyPost) => strip_tags(trim($valuePost)));
         }
         return $get;
     }

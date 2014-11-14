@@ -4,7 +4,7 @@
  * Slim Auto Loader
  */
 
-\Slim\Slim::registerAutoloader();
+Slim\Slim::registerAutoloader();
 
 /*
  * Youtify.com
@@ -36,7 +36,7 @@ class Youtify {
         } else {
             $arrSlimConfig = array('debug' => true, 'mode' => 'development');
         }
-        $this->app = new \Slim\Slim($arrSlimConfig);
+        $this->app = new Slim\Slim($arrSlimConfig);
         // End Slim Config
     }
 
@@ -52,7 +52,7 @@ class Youtify {
         $status = 200;
         $body = array("result" => array("message" => "Wellcome to Youtify APIs"));
         $headers = array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
     public function getCategories() {
@@ -72,10 +72,10 @@ class Youtify {
             $status = 500;
             $headers += array("Connection" => "close", "Warning" => "Server execute in error");
             $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
-            \MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), "_ResultRequestException", APP_NAME);
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "categories");
     }
 
     public function getPlaylistsByCategoryId() {
@@ -83,7 +83,8 @@ class Youtify {
         $headers = array();
         $body = array();
         try {
-            $id = intval($this->app->request->get("id"));
+            $getValue = s9Helper\HandlingRequest\MyRequest::cleanGET($this->app->request());
+            $id = intval($getValue["id"]);
             ORM::configure($this->ORMConfig);
             $playlists = ORM::for_table("Playlist")
                             ->select_many(array("pId" => "id", "name", "thumb" => "img"))
@@ -98,10 +99,10 @@ class Youtify {
             $status = 500;
             $headers += array("Connection" => "close", "Warning" => "Server execute in error");
             $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
-            \MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), "_ResultRequestException", APP_NAME);
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "playlist");
     }
 
     public function getVideosByPlaylistId() {
@@ -109,7 +110,8 @@ class Youtify {
         $headers = array();
         $body = array();
         try {
-            $id = intval($this->app->request->get("id"));
+            $getValue = s9Helper\HandlingRequest\MyRequest::cleanGET($this->app->request());
+            $id = intval($getValue["id"]);
             ORM::configure($this->ORMConfig);
             $videos = ORM::for_table("Video")->select_many("name", "youtube_id")->where_equal("playlist_id", $id)->find_array();
             if (count($videos) > 0) {
@@ -130,10 +132,9 @@ class Youtify {
             $status = 500;
             $headers += array("Connection" => "close", "Warning" => "Server execute in error");
             $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
-            \MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), "_ResultRequestException", APP_NAME);
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\ResponeHelper::result($this->app->request, $this->app->response, new s9Helper\RequestResult($status, $headers, $body));
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "videos");
     }
-
 }

@@ -1,18 +1,16 @@
 <?php
-
-/*
+/**
  * Define mode for apis application
  * 2 modes: DEBUG and RELEASE
  */
+define("MODE_APP", "DEBUG");
+//define("MODE_APP", "RELEASE");
 
-//define("MODE_APP", "DEBUG");
-define("MODE_APP", "RELEASE");
-
-/*
+/**
  * REQUIRE for run APIs
  * DO NOT Touch this file if must needed
  */
-require_once "../includeLibs.php";
+require_once "../autoLoad.php";
 
 /*
  * Define name of api application choose what ever you want
@@ -20,10 +18,10 @@ require_once "../includeLibs.php";
 define("APP_NAME", "Youtify");
 require_once APP_NAME . ".php";
 
-/*
+/**
  * Function call to start Slim APIs application
+ * @return void 
  */
-
 function startApp() {
     $dbUser = "s2admin";
     $dbPass = "mdata!6789";
@@ -34,7 +32,7 @@ function startApp() {
     $app->enable();
 }
 
-/*
+/**
  * Run Slim app in mode defined
  */
 if (MODE_APP === "RELEASE") {
@@ -44,9 +42,9 @@ if (MODE_APP === "RELEASE") {
     $bench->start();
     startApp();
     $bench->end();
-    $str .= PHP_EOL . 'Time: ' . $bench->getTime(true) . ' microsecond -> ' . $bench->getTime(false, '%d%s');
+    $str = PHP_EOL . 'Time: ' . $bench->getTime(true) . ' microsecond -> ' . $bench->getTime(false, '%d%s');
     $str .= PHP_EOL . 'MemoryPeak: ' . $bench->getMemoryPeak(true) . ' bytes -> ' . $bench->getMemoryPeak(false, '%.3f%s');
     $str .= PHP_EOL . 'MemoryUsage: ' . $bench->getMemoryUsage(true);
-    MyFile\Log::write($str, APP_NAME, "TestDEBUG");
+    s9Helper\MyFile\Log::write($str, APP_NAME, "test");
     unset($str);
 }

@@ -1,30 +1,38 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+Slim\Slim::registerAutoloader();
+
+/**
+ * RadioDanceOne
  */
-
-\Slim\Slim::registerAutoloader();
-
-/*
- * id, app, packageName, packageNameMarketing, developer, admod_large, admod_small, 
- * adspaceid, publisherid, `status`, is_download, strSeparatorYT, strSeparatorGD, 
- * versionApp, isParserOnline, youtube_api_key, isHd
- */
-
 class RadioDanceOne {
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
+        // Start data config
         $this->dbHost = $dbHost;
         $this->dbName = $dbName;
         $this->dbUser = $dbUser;
         $this->dbPass = $dbPass;
 
-        $this->app = new \Slim\Slim(array(
-            'debug' => true,
-            'mode' => 'development',
-        ));
+        $this->ORMConfig = array(
+            'connection_string' => 'mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName,
+            'username' => $this->dbUser,
+            'password' => $this->dbPass,
+            'driver_options' => array(
+                \PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8',
+            ),
+            'return_result_sets' => false
+        );
+        // End data config
+        // Start Slim Config
+        $arrSlimConfig = array();
+        if (MODE_APP == "RELEASE") {
+            $arrSlimConfig = array('debug' => false, 'mode' => 'production');
+        } else {
+            $arrSlimConfig = array('debug' => true, 'mode' => 'development');
+        }
+        $this->app = new Slim\Slim($arrSlimConfig);
+        // End Slim Config
     }
 
     public function enable() {
@@ -33,50 +41,35 @@ class RadioDanceOne {
         $this->app->run();
     }
 
-    function dbConnect($cache = null) {
-        $pdo = new \PDO('mysql:host=' . $this->dbHost . ';dbname=' . $this->dbName, $this->dbUser, $this->dbPass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
-        $db = new \NotORM($pdo, null, $cache);
-        return $db;
-    }
-
     public function index() {
-        
+        $status = 200;
+        $body = array("result" => array("message" => "Wellcome to " . APP_NAME . " APIs"));
+        $headers = array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
     public function getVideos() {
-        $result = null;
+        $status = 200;
+        $headers = array();
+        $body = array();
         try {
-//            $cache = new NotORM_Cache_File("notorm.cache");
-            $db = $this->dbConnect();
-            $videos = $db->videos()->select("name, img as thumb, youtube_id as youtubeId");
-            if (count($videos)) {
-                $result = array();
-                foreach ($videos as $video) {
-                    $data = iterator_to_array($video);
-                    array_push($result, $data);
-                }
+            ORM::configure($this->ORMConfig);
+            $videos = ORM::for_table("videos")->select_many(array("name", "thumb" => "img", "youtubeId" => "youtube_id"))->find_array();
+            if (count($videos) > 0) {
+                $body = array("result" => $videos);
             } else {
-                $this->app->response()->status(404);
-                $result = array('message' => 'Get Package Setting Fail!');
+                $status = 404;
+                $body = array("result" => array('message' => 'Get Videos Fail! Zero'));
             }
-        } catch (ResourceNotFoundException $e) {
-            $this->app->response()->status(404);
-            $result = array('message' => 'Resource Not Found!');
         } catch (Exception $e) {
-            $this->app->response()->status(400);
-            $this->app->response()->header('X-Status-Reason', $e->getMessage());
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
-        $this->app->response()->header('X-Powered-By', 'ongteu');
-        $mediaType = $this->app->request()->getMediaType();
-        if ($mediaType == 'application/xml') {
-            $this->app->response()->header('Content-Type', 'application/xml');
-            echo \s9ProjectHelper\ArrayToXML::toXml($result, 'app');
-        } else {
-            $this->app->response->headers->set('Content-Type', 'application/json');
-            echo json_encode($result, JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
-        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "videos");
     }
 
 }
 
-?>

@@ -1,7 +1,7 @@
 <?php
 
 // Slim Auto Loader
-\Slim\Slim::registerAutoloader();
+Slim\Slim::registerAutoloader();
 
 /**
  * APIs provider AppList.
@@ -60,7 +60,7 @@ class AppList {
 
     public function index() {
         $status = 200;
-        $body = array("result" => array("message" => "Wellcome to list app APIs"));
+        $body = array("result" => array("message" => "Wellcome to " . APP_NAME . " APIs"));
         $headers = array("Content-Type" => $this->app->request()->getMediaType());
         s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
@@ -70,11 +70,12 @@ class AppList {
         $headers = array();
         $body = array();
         try {
-            $package = trim($this->app->request->get('package'));
-            $appName = trim($this->app->request->get('app'));
+            $parameter = s9Helper\HandlingRequest\MyRequest::cleanGET($this->app->request());
+            $package = $parameter['package'];
+            $appName = $parameter['app'];
             $arrCondition = array();
             if (!empty($package)) {
-                $arrCondition = array("packageName" => strip_tags($package));
+                $arrCondition = array("packageName" => $package);
             } else if (!empty($appName)) {
                 $arrCondition = array("appName" => $appName);
             }
@@ -83,7 +84,7 @@ class AppList {
                             array("large" => "admodLarge", "small" => "admodSmall", "adspaceid", "publisherid",
                                 "packageName", "packageNameMarketing", "developer", "admobEnable",
                                 "strSeparatorYT", "strSeparatorGD", "versionApp", "isParserOnline" => "isParserOnlineYT",
-                                "isParserOnlineGD", "youtube_api_key", "isHD", "isDownload")
+                                "isParserOnlineGD", "youtube_api_key", "isHD", "isDownload", "isEnablePlayer")
                     )->where_equal($arrCondition)->find_array();
             if (count($ads) > 0) {
                 $body = array("result" => $ads[0]);
@@ -111,7 +112,8 @@ class AppList {
                             array("id", "appName", "packageName", "packageNameMarketing", "developer",
                                 "admodLarge", "admodSmall", "adspaceid", "publisherid",
                                 "strSeparatorYT", "strSeparatorGD", "isParserOnlineYT", "isParserOnlineGD",
-                                "versionApp", "isHD", "isDownload", "admobEnable", "youtube_api_key")
+                                "versionApp", "isHD", "isDownload", "isEnablePlayer",
+                                "admobEnable", "youtube_api_key")
                     )->find_array();
             if (count($ads) > 0) {
                 $body = array("result" => $ads);
@@ -139,7 +141,8 @@ class AppList {
                             array("id", "appName", "packageName", "packageNameMarketing", "developer",
                                 "admodLarge", "admodSmall", "adspaceid", "publisherid",
                                 "strSeparatorYT", "strSeparatorGD", "isParserOnlineYT", "isParserOnlineGD",
-                                "versionApp", "isHD", "isDownload", "admobEnable", "youtube_api_key")
+                                "versionApp", "isHD", "isDownload", "isEnablePlayer",
+                                "admobEnable", "youtube_api_key")
                     )->where_equal("id", $id)->find_array();
             if (count($ads) > 0) {
                 $body = array("result" => $ads[0]);
@@ -175,6 +178,7 @@ class AppList {
                     "strSeparatorYT" => trim($post['strSeparatorYT']), "strSeparatorGD" => trim($post['strSeparatorGD']),
                     "isParserOnlineYT" => intval($post['isParserOnlineYT']), "isParserOnlineGD" => intval($post['isParserOnlineGD']),
                     "versionApp" => trim($post['versionApp']), "isHD" => intval($post['isHD']), "isDownload" => intval($post['isDownload']),
+                    "isEnablePlayer" => intval($post['isEnablePlayer']),
                     "admobEnable" => intval($post['admobEnable']), "youtube_api_key" => trim($post['youTubeApiKey'])));
                 $newCf->save();
                 $commitOK = ORM::get_db(ORM::DEFAULT_CONNECTION)->commit();
@@ -225,8 +229,8 @@ class AppList {
                     "adspaceid" => $post['adspaceId'], "publisherid" => $post['publisherId'],
                     "strSeparatorYT" => $post['strSeparatorYT'], "strSeparatorGD" => $post['strSeparatorGD'],
                     "versionApp" => $post['versionApp'], "admobEnable" => intval($post['admobEnable']), "isDownload" => $post['isDownload'],
-                    "isParserOnlineYT" => intval($post['isParserOnlineYT']), "isParserOnlineYT" => intval($post['isParserOnlineYT']), 
-                    "youtube_api_key" => $post['youTubeApiKey'], "isHD" => intval($post['isHD'])));
+                    "isParserOnlineYT" => intval($post['isParserOnlineYT']), "isParserOnlineYT" => intval($post['isParserOnlineYT']),
+                    "youtube_api_key" => $post['youTubeApiKey'], "isHD" => intval($post['isHD']), "isEnablePlayer" => intval($post['isEnablePlayer'])));
                 $updateCf->save();
                 $commitOK = ORM::get_db(ORM::DEFAULT_CONNECTION)->commit();
                 if ($commitOK) {
@@ -265,7 +269,9 @@ class AppList {
         $body = array();
         ORM::configure($this->ORMConfig);
         try {
-            $post = $this->app->request()->post();
+            $post = s9Helper\HandlingRequest\MyRequest::cleanPOST($this->app->request);
+            
+            
         } catch (PDOException $e) {
             $status = 500;
             ORM::get_db(ORM::DEFAULT_CONNECTION)->rollBack();
@@ -291,10 +297,10 @@ class AppList {
                     return in_array($value, $acceptable, true);
                 }, 'không đúng định dạng');
         $v->rule('required', [
-            'appName', 'packageName', 'packageNameMarketing', 'developer', 
-            'admodLarge', 'admodSmall', 'adspaceId', 'publisherId', 
-            'strSeparatorYT', 'strSeparatorGD', 'isParserOnlineYT', 'isParserOnlineGD', 
-            'versionApp', 'isHD', 'isDownload', 'admobEnable', 'youTubeApiKey']);
+            'appName', 'packageName', 'packageNameMarketing', 'developer',
+            'admodLarge', 'admodSmall', 'adspaceId', 'publisherId',
+            'strSeparatorYT', 'strSeparatorGD', 'isParserOnlineYT', 'isParserOnlineGD',
+            'versionApp', 'isHD', 'isDownload', 'isEnablePlayer', 'admobEnable', 'youTubeApiKey']);
         $v->rule('myBool', ['isHD', 'isDownload']);
         $v->rule('integer', ['id', 'isParserOnlineYT', 'isParserOnlineGD']);
         $v->rule('min', ['id'], 1);

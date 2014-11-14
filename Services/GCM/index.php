@@ -26,7 +26,8 @@ require_once APP_NAME . ".php";
 function startApp() {
     $dbUser = "s2admin";
     $dbPass = "mdata!6789";
-    $dbHost = "localhost";
+//    $dbHost = "gcmmobi.com";
+    $dbHost = "localhost";    
     $dbName = "AppGCM";
 
     $app = new AppGCM($dbHost, $dbName, $dbUser, $dbPass);

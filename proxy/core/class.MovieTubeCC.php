@@ -11,27 +11,31 @@ class MovieTubeCC {
 
     static function requestUrlParse($siteId) {
         $link = '';
-        $url = 'http://movietube.cc/index.php';
-        $postData = array('c' => "result", 'a' => "getplayerinfo", 'p' => "{\"KeyWord\":\"" . $siteId . "\"}");
-        $postString = http_build_query($postData);
-        $opts = array('http' =>
-            array('method' => 'POST', 'header' => 'Content-type: application/x-www-form-urlencoded', 'content' => $postString)
-        );
-        $context = stream_context_create($opts);
-        $html = file_get_html($url, false, $context);
-        if (!empty($html)) {
-            try {
-                $link = array_shift($html->find("input[id='hdn_playertype']"))->data;
-                $html->clear();
-            } catch (Exception $exc) {
-                $link = null;
-                File\Log::write($exc . " " . $siteId);
+        try {
+            $url = 'http://movietube.cc/index.php';
+            $postData = array('c' => "result", 'a' => "getplayerinfo", 'p' => "{\"KeyWord\":\"" . $siteId . "\"}");
+            $postString = http_build_query($postData);
+            $opts = array('http' =>
+                array('method' => 'POST', 'header' => 'Content-type: application/x-www-form-urlencoded', 'content' => $postString)
+            );
+            $context = stream_context_create($opts);
+            $html = file_get_html($url, false, $context);
+            if (!empty($html)) {
+                try {
+                    $link = array_shift($html->find("input[id='hdn_playertype']"))->data;
+                    $html->clear();
+                } catch (Exception $exc) {
+                    $link = null;
+                    File\Log::write($exc . " " . $siteId);
+                }
             }
+            unset($postData);
+            unset($postString);
+            unset($html);
+            unset($context);
+        } catch (Exception $exc) {
+            
         }
-        unset($postData);
-        unset($postString);
-        unset($html);
-        unset($context);
         return urldecode(self::cleanLink($siteId, $link));
     }
 
@@ -44,44 +48,47 @@ class MovieTubeCC {
             if (!empty($html)) {
                 try {
                     $link = array_shift($html->find("source"))->src;
-                    dd($link);
                     $html->clear();
                 } catch (Exception $exc) {
                     $link = $strSrc;
                 }
             } else {
-                \MyFile\Log::write($exc . " " . $id);
+                s9Helper\MyFile\Log::write($exc . " " . $id, ".ParseMovieTube", "test");
             }
         }
         return $link;
     }
+
 }
 
 class Watch33TV {
 
     function requestUrlParse($siteId, $episode, $part) {
         $link = '';
-        $url = 'http://kissdrama.net/index.php';
-        $postData = array('c' => "result", 'a' => "getplayerinfo", 'p' => "{\"KeyWord\":\"" . $siteId . "\",\"Episode\":\"" . $episode . "\",\"Part\":\"" . $part . "\"}");
-        $postString = http_build_query($postData);
-        $opts = array('http' =>
-            array('method' => 'POST', 'header' => 'Content-type: application/x-www-form-urlencoded', 'content' => $postString)
-        );
-        $context = stream_context_create($opts);
-        $html = file_get_html($url, false, $context);
-        if (!empty($html)) {
-            try {
-                $link = array_shift($html->find("video[id='mp4player2'] source"))->src;
-                $html->clear();
-            } catch (Exception $exc) {
-                $link = null;
-                File\Log::write($exc . " " . $siteId);
+        try {
+            $url = 'http://kissdrama.net/index.php';
+            $postData = array('c' => "result", 'a' => "getplayerinfo", 'p' => "{\"KeyWord\":\"" . $siteId . "\",\"Episode\":\"" . $episode . "\",\"Part\":\"" . $part . "\"}");
+            $postString = http_build_query($postData);
+            $opts = array('http' =>
+                array('method' => 'POST', 'header' => 'Content-type: application/x-www-form-urlencoded', 'content' => $postString)
+            );
+            $context = stream_context_create($opts);
+            $html = file_get_html($url, false, $context);
+            if (!empty($html)) {
+                try {
+                    $link = array_shift($html->find("video[id='mp4player2'] source"))->src;
+                    $html->clear();
+                } catch (Exception $exc) {
+                    $link = null;
+                    File\Log::write($exc . " " . $siteId);
+                }
             }
+            unset($postData);
+            unset($postString);
+            unset($html);
+            unset($context);
+        } catch (Exception $exc) {
         }
-        unset($postData);
-        unset($postString);
-        unset($html);
-        unset($context);
         return urldecode($link);
     }
 

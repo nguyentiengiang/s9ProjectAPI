@@ -1,9 +1,9 @@
 <?php
 
-\Slim\Slim::registerAutoloader();
+Slim\Slim::registerAutoloader();
 
 /*
- * Chia-anime
+ * Chia-anime.com
  */
 
 class ChiaAnimeMovie {
@@ -32,7 +32,7 @@ class ChiaAnimeMovie {
         } else {
             $arrSlimConfig = array('debug' => true, 'mode' => 'development');
         }
-        $this->app = new \Slim\Slim($arrSlimConfig);
+        $this->app = new Slim\Slim($arrSlimConfig);
         // End Slim Config
     }
 
@@ -72,7 +72,7 @@ class ChiaAnimeMovie {
             s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "app");
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "animeCategory");
     }
 
     public function GetListFilm() {
@@ -124,7 +124,7 @@ class ChiaAnimeMovie {
             s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "anime");
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "animes");
     }
 
     public function GetEpisodesByFilm() {
@@ -184,6 +184,6 @@ class ChiaAnimeMovie {
             s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "app");
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "anime");
     }
 }

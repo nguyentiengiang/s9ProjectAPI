@@ -17,7 +17,7 @@ require_once "../autoLoad.php";
 /*
  * Define name of api application choose what ever you want
  */
-define("APP_NAME", "MovieTubeCCv3");
+define("APP_NAME", "RedditMovies");
 require_once APP_NAME . ".php";
 
 /*
@@ -28,9 +28,9 @@ function startApp() {
     $dbUser = "s2admin";
     $dbPass = "mdata!6789";
     $dbHost = "localhost";
-    $dbName = "MovieTubeCCv2";
+    $dbName = "RedditMovies";
 
-    $app = new MovieTubeCCv3($dbHost, $dbName, $dbUser, $dbPass);
+    $app = new RedditMovies($dbHost, $dbName, $dbUser, $dbPass);
     $app->enable();
 }
 

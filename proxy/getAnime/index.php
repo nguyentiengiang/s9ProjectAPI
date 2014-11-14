@@ -4,8 +4,8 @@
  * Define mode for apis application
  * 2 modes: DEBUG and RELEASE
  */
-define("MODE_APP", "DEBUG");
-//define("MODE_APP", "RELEASE");
+//define("MODE_APP", "DEBUG");
+define("MODE_APP", "RELEASE");
 
 /**
  * REQUIRE for run APIs
@@ -16,19 +16,18 @@ require(LIB_ROOT . 'simple_html_dom.php');
 /*
  * Define name of api application choose what ever you want
  */
-define("APP_NAME", "GetLink");
+define("APP_NAME", "GetAnime");
 
-require '../core/class.GoogleVideo.php';
-require '../core/class.MovieTubeCC.php';
+require '../core/class.ChiaAnime.php';
 
-require '../core/getStreamMP4.php';
+require '../core/getAnime.php';
 
 /**
  * Function call to start Slim APIs application
  * @return void 
  */
 function startApp() {
-    $getLink = new getStreamLinkMP4();
+    $getLink = new getStreamAnime();
     $getLink->enable();
 }
 

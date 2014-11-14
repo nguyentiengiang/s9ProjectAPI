@@ -1,16 +1,11 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+Slim\Slim::registerAutoloader();
 
-\Slim\Slim::registerAutoloader();
-
-/*
+/**
+ * for GCM database, get infomation of user
  * deviceId, registrationGcmId, packageName, gMail, isHide
  */
-
 class AppGCM {
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
@@ -45,6 +40,7 @@ class AppGCM {
         $this->app->get('/', array($this, 'index'));
         $this->app->get('/getToView', array($this, 'getToView'));
         $this->app->post('/json/GCMPost', array($this, 'postGCMAddNew'));
+        $this->app->post('/iOSUser', array($this, 'postAddNewiOSUser'));
         $this->app->run();
     }
 
@@ -99,8 +95,55 @@ class AppGCM {
                 $updateCf = ORM::for_table('GCM_User')->create();
                 $updateCf->set(array(
                     "deviceId" => $post['deviceId'], "registrationGcmId" => $post['registrationGcmId'],
-                    "packageName" => $post['packageName'], "gMail" => $post['gMail'], 
+                    "packageName" => $post['packageName'], "gMail" => $post['gMail'],
                     "isHide" => 0));
+                $updateCf->save();
+                $commitOK = ORM::get_db(ORM::DEFAULT_CONNECTION)->commit();
+                if ($commitOK) {
+                    $body = array("result" => array('StatusCode' => 1, 'Message' => 'OK'));
+                } else {
+                    $rollBackOK = ORM::get_db(ORM::DEFAULT_CONNECTION)->rollBack();
+                    if ($rollBackOK) {
+                        $body = array("result" => array('StatusCode' => 0, 'Message' => 'Invalid Parameters', 'error' => "Rollback transaction!"));
+                    } else {
+                        $body = array("result" => array('StatusCode' => 0, 'Message' => 'Invalid Parameters', 'error' => "Can't rollback right now."));
+                    }
+                    s9Helper\MyFile\Log::write(ORM::get_query_log(ORM::DEFAULT_CONNECTION), "PDOFail", APP_NAME);
+                }
+            } else {
+                $body = array("result" => array('StatusCode' => 0, 'message' => 'Valid data fail', 'errors' => $vaildate));
+            }
+        } catch (PDOException $e) {
+            $status = 500;
+            ORM::get_db(ORM::DEFAULT_CONNECTION)->rollBack();
+            $headers += array("Connection" => "close", "Warning" => "Data Server executed error");
+            $body = array("result" => array('StatusCode' => 0, 'message' => 'Validate field data broken!', 'errors' => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".PDOException", APP_NAME);
+        } catch (Exception $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array('StatusCode' => 0, "message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
+        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
+    }
+
+    public function postAddNewiOSUser() {
+        $status = 200;
+        $headers = array();
+        $body = array();
+        ORM::configure($this->ORMConfig);
+        try {
+            $post = s9Helper\HandlingRequest\MyRequest::cleanPOST($this->app->request);
+            $vaildate = self::ValidatePostIosUser($post);
+            if (empty($vaildate)) {
+                ORM::get_db(ORM::DEFAULT_CONNECTION)->beginTransaction();
+                $updateCf = ORM::for_table('iOS_User')->create();
+                $updateCf->set(array(
+                    "deviceId" => $post['deviceId'], "appId" => $post['appId'],
+                    "mail" => $post['mail'], "isHide" => 0)
+                );
                 $updateCf->save();
                 $commitOK = ORM::get_db(ORM::DEFAULT_CONNECTION)->commit();
                 if ($commitOK) {
@@ -148,5 +191,19 @@ class AppGCM {
         return $return;
     }
 
-}
+    private function ValidatePostIosUser($arrayData) {
+        $return = null;
+        Valitron\Validator::langDir(LIB_ROOT . 'Valitron/lang');
+        Valitron\Validator::lang('vi');
+        $v = new Valitron\Validator($arrayData);
+//        $v->rule('required', ['deviceId', 'appId']);
+        $v->rule('email', ['mail']);
+        if ($v->validate()) {
+            $return = null;
+        } else {
+            $return = $v->errors();
+        }
+        return $return;
+    }
 
+}
