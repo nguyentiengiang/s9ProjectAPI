@@ -26,7 +26,7 @@ class MovieTubeCC {
                     $html->clear();
                 } catch (Exception $exc) {
                     $link = null;
-                    File\Log::write($exc . " " . $siteId);
+                    s9Helper\MyFile\Log::write($exc . " " . $siteId);
                 }
             }
             unset($postData);
@@ -80,7 +80,7 @@ class Watch33TV {
                     $html->clear();
                 } catch (Exception $exc) {
                     $link = null;
-                    File\Log::write($exc . " " . $siteId);
+                    s9Helper\MyFile\Log::write($exc . " " . $siteId);
                 }
             }
             unset($postData);
