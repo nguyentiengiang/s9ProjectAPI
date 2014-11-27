@@ -342,7 +342,7 @@ class YouTube {
             }
             $link = $arrHQ + $arrSQ;
         }
-        
+
         return $link;
     }
 
@@ -454,6 +454,60 @@ class YouTube2 {
         $strCvt = null;
         $arrVal1 = explode("\u", $strSrc1st);
         return substr($strCvt, 0, -1);
+    }
+
+}
+
+class YouTube3 {
+
+    static function requestContent($youTubeId) {
+        $content = null;
+        $url = "https://www.youtube.com/get_video_info?&video_id=" . $youTubeId . "&el=detailpage&ps=default&eurl=&gl=US&hl=en";
+        $content = file_get_html($url);
+        return $content;
+    }
+
+    static function processContent($content) {
+        $link = '';
+        $strSrc = urldecode($content);
+        $link = self::cleanLinkTypeClient($strSrc);
+        unset($strSrc);
+        return $link;
+    }
+
+    private static function cleanLinkTypeClient($strSrc) {
+        $link = array();
+        if ($strSrc != null || $strSrc != '') {
+            $arrSrc1 = explode("url_encoded_fmt_stream_map", $strSrc);
+            $arrSrc2 = explode(",", $arrSrc1[1]);
+            $arrTemp = array();
+            $i = 0;
+            foreach ($arrSrc2 as $val) {
+                $arrVal1 = explode("url=", $val);
+                foreach ($arrVal1 as $val1) {
+                    if (strpos($val1, 'http') === 0) {
+                        $arrVal2 = explode(";", urldecode($val1));
+                        $arrTemp += array('link ' . $i => YouTube::buildQueryString($arrVal2[0]));
+                    }
+                }
+                $i++;
+            }
+            $arrSrc1 = explode("adaptive_fmts", $strSrc);
+            $arrSrc2 = explode(",", $arrSrc1[1]);
+            $arrTemp2 = array();
+            foreach ($arrSrc2 as $val) {
+                $arrVal1 = explode("url=", $val);
+                foreach ($arrVal1 as $val1) {
+                    if (strpos($val1, 'http') === 0) {
+                        $arrVal2 = explode(";", urldecode($val1));
+                        $arrTemp2 += array('link ' . $i => YouTube::buildQueryString($arrVal2[0]));
+                    }
+                }
+                $i++;
+            }
+            $link = $arrTemp + $arrTemp2;
+        }
+        return $link;
     }
 
 }
