@@ -106,7 +106,7 @@ class MVTubeCO {
         try {
             $pId = $this->app->request()->get('id');
             ORM::configure($this->ORMConfig);
-            $songs = ORM::for_table("Song")->select_many(array("name", "singer", "image", "youtubeId", "author" => "uploader", "duration", "viewCount", "rating"))->where_equal(array("isHide" => 0, "playlistId" => $pId))->find_array();
+            $songs = ORM::for_table("Song")->select_many(array("name", "singer", "image", "youtubeId", "author" => "uploader", "duration", "viewCount", "rating", "like", "dislike"))->where_equal(array("isHide" => 0, "playlistId" => $pId))->find_array();
             
             if (count($songs)) {
                 $body = array("result" => array("song" => $songs));
@@ -131,7 +131,7 @@ class MVTubeCO {
         try {
             $pId = $this->app->request()->get('id');
             ORM::configure($this->ORMConfig);
-            $songs = ORM::for_table("Song")->select_many(array("name", "singer", "image", "youtubeId", "author" => "uploader", "duration", "viewCount", "rating"))->where_equal(array("isHide" => 0, "playlistId" => $pId))->limit(500)->find_array();
+            $songs = ORM::for_table("Song")->select_many(array("name", "singer", "image", "youtubeId", "author" => "uploader", "duration", "viewCount", "rating", "like", "dislike"))->where_equal(array("isHide" => 0, "playlistId" => $pId))->limit(500)->find_array();
             if (count($songs)) {
                 $body = array("result" => array("song" => $songs));
             } else {
