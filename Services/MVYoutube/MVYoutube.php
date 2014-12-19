@@ -3,10 +3,10 @@
 Slim\Slim::registerAutoloader();
 
 /*
- * MVTubeCO 
+ * MVYouTube
  */
 
-class MVTubeCO {
+class MVYoutube {
 
     public function __construct($dbHost, $dbName, $dbUser, $dbPass) {
         // Start data config
@@ -38,10 +38,11 @@ class MVTubeCO {
 
     public function enable() {
         $this->app->get('/', array($this, 'index'));
-        $this->app->map('/json/GetPlaylist', array($this, 'GetPlaylists'))->via("GET", "POST");
-        $this->app->get('/json/GetYTPlaylist', array($this, 'GetYTPlaylists'));
-        $this->app->get('/json/GetSong', array($this, 'GetSongByPlaylist500'));
-        $this->app->get('/json/GetSongWP', array($this, 'GetSongByPlaylist500'));
+        $this->app->get('/GetCountry', array($this, 'GetCountry'));
+        $this->app->get('/GetGenres', array($this, 'GetGenres'));
+        $this->app->get('/GetPopular', array($this, 'GetPopular'));
+        $this->app->get('/GetTopGenres', array($this, 'GetTopGenres'));
+        $this->app->get('/GetVideos', array($this, 'GetVideoByPlaylist'));
         $this->app->run();
     }
 
@@ -52,21 +53,19 @@ class MVTubeCO {
         s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body);
     }
 
-    public function GetPlaylists() {
+    public function GetCountry() {
         $status = 200;
         $headers = array();
         $body = array();
         try {
             ORM::configure($this->ORMConfig);
-            $charts = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "imageFlat"))->where_equal(array("isHide" => 0, "typePlaylist" => 1))->find_array();
-            $languages = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "imageFlat"))->where_equal(array("isHide" => 0, "typePlaylist" => 2))->find_array();
-            $artists = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "imageFlat"))->where_equal(array("isHide" => 0, "typePlaylist" => 3))->find_array();
-            $albums = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "imageFlat"))->where_equal(array("isHide" => 0, "typePlaylist" => 4))->find_array();
-            $genres = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "imageFlat"))->where_equal(array("isHide" => 0, "typePlaylist" => 5))->find_array();
-            $body = array("result" => array("chart" => $charts) + array("language" => $languages) +
-                array("artist" => $artists) + array("album" => $albums) +
-                array("genre" => $genres)
-            );
+            $urlApi = s9Helper\URL::getURL();
+            $country = ORM::for_table("Playlist")->select_many(array("id", "name", "image"))->where_equal(array("isHide" => 0, "type" => 1))->find_array();
+            $arrCountry = array();
+            foreach ($country as $c) {
+                array_push($arrCountry, array("id" => $c['id'], "name" => $c['name'], 'image' => $urlApi . $c['image']));
+            }
+            $body = array("result" => array("country" => $arrCountry));
         } catch (Exception $e) {
             $status = 500;
             $headers += array("Connection" => "close", "Warning" => "Server execute in error");
@@ -74,21 +73,21 @@ class MVTubeCO {
             s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "playlist");
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "playlist", null, true);
     }
 
-    public function GetYTPlaylists() {
+    public function GetGenres() {
         $status = 200;
         $headers = array();
         $body = array();
         try {
             ORM::configure($this->ORMConfig);
-            $popularPlaylists = ORM::for_table("PlaylistYT")->select_many(array("name", "imageFlat" => "imgFlat"))->where_equal(array("typePlaylist" => 1))->find_array();
-            $artists = ORM::for_table("PlaylistYT")->select_many(array("name", "imageFlat" => "imgFlat"))->where_equal(array("typePlaylist" => 2))->find_array();
-            $playlists = ORM::for_table("PlaylistYT")->select_many(array("name", "imageFlat" => "imgFlat"))->where_equal(array("typePlaylist" => 3))->find_array();
-
-            $body = array("result" => array("popularPlaylist" => $popularPlaylists) + array("artist" => $artists) +
-                array("playlist" => $playlists));
+            $genres = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "author", "publishedDate", "totalVideos"))->where_equal(array("isHide" => 0, "type" => 2))->find_array();
+            $arrGenres = array();
+            foreach ($genres as $g) {
+                array_push($arrGenres, array("id" => $g['id'], "name" => $g['name'], "image" => $g['image'], "author" => $g['author'], "publishedDate" => date_format(date_create($g['publishedDate']), 'd/m/Y'), "totalVideos" => intval($g['totalVideos'])));
+            }
+            $body = array("result" => array("genre" => $arrGenres));
         } catch (Exception $e) {
             $status = 500;
             $headers += array("Connection" => "close", "Warning" => "Server execute in error");
@@ -96,21 +95,66 @@ class MVTubeCO {
             s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "playlist");
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "playlist", null, true);
     }
-
-    public function GetSongByPlaylist() {
+    
+    public function GetPopular() {
+        $status = 200;
+        $headers = array();
+        $body = array();
+        try {
+            ORM::configure($this->ORMConfig);
+            $popular = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "author", "publishedDate", "totalVideos"))->where_equal(array("isHide" => 0, "type" => 3))->find_array();
+            $arrPopular = array();
+            foreach ($popular as $p) {
+                array_push($arrPopular, array("id" => $p['id'], "name" => $p['name'], "image" => $p['image'], "author" => $p['author'], "publishedDate" => date_format(date_create($p['publishedDate']), 'd/m/Y'), "totalVideos" => intval($p['totalVideos'])));
+            }
+            $body = array("result" => array("popular" => $arrPopular));
+        } catch (Exception $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
+        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "playlist", null, true);
+    }
+    
+    public function GetTopGenres() {
+        $status = 200;
+        $headers = array();
+        $body = array();
+        try {
+            ORM::configure($this->ORMConfig);
+            $topGenre = ORM::for_table("Playlist")->select_many(array("id", "name", "image", "author", "publishedDate", "totalVideos", "parent"))->where_equal(array("isHide" => 0, "type" => 4))->find_array();
+            $arrTopGenre = array();
+            foreach ($topGenre as $tg) {
+                array_push($arrTopGenre, array("id" => $tg['id'], "name" => $tg['name'], "image" => $tg['image'], "author" => $tg['author'], "publishedDate" => date_format(date_create($tg['publishedDate']), 'd/m/Y'), "totalVideos" => intval($tg['totalVideos']), "parent" => $tg['parent']));
+            }
+            $body = array("result" => array("topGenres" => $arrTopGenre));
+        } catch (Exception $e) {
+            $status = 500;
+            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
+            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
+            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
+        }
+        $headers += array("Content-Type" => $this->app->request()->getMediaType());
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "playlist", null, true);
+    }
+    
+    public function GetVideoByPlaylist() {
         $status = 200;
         $headers = array();
         $body = array();
         try {
             $pId = $this->app->request()->get('id');
+
             ORM::configure($this->ORMConfig);
-            $songs = ORM::for_table("Song")->select_many(array("name", "singer", "image", "youtubeId", "author" => "uploader", "duration", "viewCount", "rating", "like", "dislike"))
+            $songs = ORM::for_table("Video")->select_many(array("name", "image", "youtubeId", "author", "duration", "viewCount", "rating", "like", "dislike"))
                     ->where_equal(array("isHide" => 0, "playlistId" => $pId))->find_array();
             
             if (count($songs)) {
-                $body = array("result" => array("song" => $songs));
+                $body = array("result" => array("videos" => $songs));
             } else {
                 $this->app->response()->status(404);
                 $body = array("result" => array('message' => 'Get Songs Fail!'));
@@ -122,33 +166,7 @@ class MVTubeCO {
             s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
         }
         $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "songs");
-    }
-
-    public function GetSongByPlaylist500() {
-        $status = 200;
-        $headers = array();
-        $body = array();
-        try {
-            $pId = $this->app->request()->get('id');
-            ORM::configure($this->ORMConfig);
-            $songs = ORM::for_table("Song")->select_many(array("name", "singer", "image", "youtubeId", "author" => "uploader", "duration", "viewCount", "rating", "like", "dislike"))
-                    ->where_equal(array("isHide" => 0, "playlistId" => $pId))
-                    ->limit(500)->find_array();
-            if (count($songs)) {
-                $body = array("result" => array("song" => $songs));
-            } else {
-                $this->app->response()->status(404);
-                $body = array("result" => array('message' => 'Get Songs Fail!'));
-            }
-        } catch (Exception $e) {
-            $status = 500;
-            $headers += array("Connection" => "close", "Warning" => "Server execute in error");
-            $body = array("result" => array("message" => "You have a trouble request", "error" => $e->getMessage()));
-            s9Helper\MyFile\Log::write("File:" . $e->getFile() . PHP_EOL . "Message:" . $e->getMessage() . PHP_EOL . "Line:" . $e->getLine() . PHP_EOL . "Code:" . $e->getCode() . PHP_EOL . "Trace:" . $e->getTraceAsString(), ".ExecuteException", APP_NAME);
-        }
-        $headers += array("Content-Type" => $this->app->request()->getMediaType());
-        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "songs");
+        s9Helper\HandlingRespone\MyRespone::result($this->app->request, $this->app->response, $status, $headers, $body, "songs", null, true);
     }
     
 }

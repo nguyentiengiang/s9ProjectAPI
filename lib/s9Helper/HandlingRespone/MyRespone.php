@@ -16,7 +16,6 @@ namespace s9Helper\HandlingRespone;
  * This source file is subject to the BSD/GPLv2 License that is bundled
  * with this source code in the file license.txt.
  */
-
 class MyRespone {
 
     private static $status;
@@ -38,7 +37,7 @@ class MyRespone {
      * 
      * @return self (print direct result containter)
      */
-    public static function result($contextAppRequest, $contextAppRespone = "", $status = null, $headers = null, $body = null, $root = "root", $cookies = null) {
+    public static function result($contextAppRequest, $contextAppRespone = "", $status = null, $headers = null, $body = null, $root = "root", $cookies = null, $zip = false) {
         self::$headers = array("X-Powered-By" => "ongteu");
         // Set status respone
         if (empty($status)) {
@@ -77,6 +76,16 @@ class MyRespone {
         if ($contextAppRequest->isPost() || $contextAppRequest->isPut()) {
             $contextAppRespone->header("Content-Type", "application/json");
         }
+        if ($zip) {
+            if (function_exists('ob_gzhandler')) {
+                if (substr_count($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip')) {                    
+                    ob_start('ob_gzhandler');
+                    self::$headers += array("Content-Encoding" => "gzip", "Vary" => "Accept-Encoding");
+                }
+            } else {
+                ob_start();
+            }
+        }
         if (self::$headers["Content-Type"] === "application/xml") {
             echo \s9Helper\MyFile\XML::generate_valid_xml_from_array(self::$body['result'], self::$root, "item");
         } else if ($contextAppRequest->get("callback")) {
@@ -84,6 +93,9 @@ class MyRespone {
             echo $callback . "(" . json_encode(self::$body['result'], JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) . ");";
         } else {
             echo json_encode(self::$body['result'], JSON_NUMERIC_CHECK | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+            if ($zip) {
+                ob_end_flush();
+            }
         }
     }
 
